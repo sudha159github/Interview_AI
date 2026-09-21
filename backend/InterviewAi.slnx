@@ -1,0 +1,12 @@
+<Solution>
+  <Folder Name="/Solution Items/">
+    <File Path="Directory.Build.props" />
+    <File Path="Directory.Packages.props" />
+  </Folder>
+  <Folder Name="/src/">
+    <Project Path="src/InterviewAi.Api/InterviewAi.Api.csproj" />
+    <Project Path="src/InterviewAi.Application/InterviewAi.Application.csproj" />
+    <Project Path="src/InterviewAi.Domain/InterviewAi.Domain.csproj" />
+    <Project Path="src/InterviewAi.Infrastructure/InterviewAi.Infrastructure.csproj" />
+  </Folder>
+</Solution>

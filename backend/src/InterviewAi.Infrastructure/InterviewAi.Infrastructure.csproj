@@ -1,0 +1,5 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+  <ItemGroup>
+    <ProjectReference Include="..\InterviewAi.Application\InterviewAi.Application.csproj" />
+  </ItemGroup>
+</Project>

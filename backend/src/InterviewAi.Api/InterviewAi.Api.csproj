@@ -1,0 +1,6 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+  <ItemGroup>
+    <ProjectReference Include="..\InterviewAi.Application\InterviewAi.Application.csproj" />
+    <ProjectReference Include="..\InterviewAi.Infrastructure\InterviewAi.Infrastructure.csproj" />
+  </ItemGroup>
+</Project>
