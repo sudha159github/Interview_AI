@@ -1,0 +1,93 @@
+# For more info on HTTP files go to https://aka.ms/vs/httpfile
+@baseUrl = https://localhost:7029
+
+### 1. Register a user
+# @name register
+POST {{baseUrl}}/api/auth/register
+Content-Type: application/json
+
+{
+  "userName": "demo.user",
+  "email": "demo@example.com",
+  "password": "Password123"
+}
+
+### 2. Log in
+# @name login
+POST {{baseUrl}}/api/auth/login
+Content-Type: application/json
+
+{
+  "email": "demo@example.com",
+  "password": "Password123"
+}
+
+### 3. Who am I? (needs the token)
+GET {{baseUrl}}/api/auth/me
+Authorization: Bearer {{login.response.body.$.accessToken}}
+
+### 4. Reports WITHOUT a token → expect 401
+GET {{baseUrl}}/api/interview-reports
+
+### 5. Generate a report (with token)
+# @name create
+POST {{baseUrl}}/api/interview-reports
+Authorization: Bearer {{login.response.body.$.accessToken}}
+Content-Type: application/json
+
+{
+  "jobDescription": "We are hiring a Junior .NET Backend Developer to build REST APIs with ASP.NET Core, Entity Framework Core and SQL Server. Experience with Git and unit testing is a plus.",
+  "selfDescription": "Computer science graduate with one year of C# experience, building small ASP.NET Core APIs and learning SQL Server."
+}
+
+### 6. List my reports
+GET {{baseUrl}}/api/interview-reports
+Authorization: Bearer {{login.response.body.$.accessToken}}
+
+### 7. Get my report
+GET {{baseUrl}}/api/interview-reports/{{create.response.body.$.id}}
+Authorization: Bearer {{login.response.body.$.accessToken}}
+
+### 8. Register a SECOND user
+# @name register2
+POST {{baseUrl}}/api/auth/register
+Content-Type: application/json
+
+{
+  "userName": "other.user",
+  "email": "other@example.com",
+  "password": "Password123"
+}
+
+### 9. Second user tries to read the FIRST user's report → expect 404
+GET {{baseUrl}}/api/interview-reports/{{create.response.body.$.id}}
+Authorization: Bearer {{register2.response.body.$.accessToken}}
+
+### 10. Wrong password → expect 401
+POST {{baseUrl}}/api/auth/login
+Content-Type: application/json
+
+{
+  "email": "demo@example.com",
+  "password": "WrongPassword1"
+}
+
+### 11. Register the same email again → expect 409
+POST {{baseUrl}}/api/auth/register
+Content-Type: application/json
+
+{
+  "userName": "demo.user2",
+  "email": "demo@example.com",
+  "password": "Password123"
+}
+
+### 12. Weak password → expect 400
+POST {{baseUrl}}/api/auth/register
+Content-Type: application/json
+
+{
+  "userName": "weak.user",
+  "email": "weak@example.com",
+  "password": "password"
+}

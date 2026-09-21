@@ -36,6 +36,13 @@ public class InterviewReportConfiguration : IEntityTypeConfiguration<InterviewRe
         builder.HasIndex(r => new { r.OwnerId, r.CreatedAt })
                .IsDescending(false, true);
 
+        // Owner: every report belongs to a real user.
+        // Deleting a user deletes their reports (their personal data goes with them).
+        builder.HasOne<ApplicationUser>()
+               .WithMany()
+               .HasForeignKey(r => r.OwnerId)
+               .OnDelete(DeleteBehavior.Cascade);
+
         // Children: one report has many, deleted together with the report
         builder.HasMany(r => r.Questions)
                .WithOne()
