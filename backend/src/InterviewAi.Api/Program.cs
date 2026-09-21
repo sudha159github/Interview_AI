@@ -1,4 +1,6 @@
+using InterviewAi.Api.AI;
 using InterviewAi.Api.Data;
+using InterviewAi.Api.Services;
 
 using Microsoft.EntityFrameworkCore;
 
@@ -14,11 +16,31 @@ var connectionString = builder.Configuration.GetConnectionString("DefaultConnect
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseSqlServer(connectionString));
 
+// TEMPORARY: every request is the demo user until login exists (Phase 6)
+builder.Services.AddScoped<ICurrentUser, DemoCurrentUser>();
+
+// TEMPORARY: fake AI until Gemini is connected (Phase 8)
+builder.Services.AddScoped<IInterviewReportGenerator, FakeInterviewReportGenerator>();
+
+// Business logic
+builder.Services.AddScoped<InterviewReportService>();
+
 builder.Services.AddControllers();
+
+// Generate the OpenAPI description of our endpoints
+builder.Services.AddOpenApi();
 
 // ---------- Request pipeline ----------
 
 var app = builder.Build();
+
+// Swagger only in Development: never expose API documentation in production
+if (app.Environment.IsDevelopment())
+{
+    app.MapOpenApi();   // serves the description at /openapi/v1.json
+    app.UseSwaggerUI(options =>
+        options.SwaggerEndpoint("/openapi/v1.json", "Interview AI API v1"));
+}
 
 app.UseHttpsRedirection();
 app.UseAuthorization();
