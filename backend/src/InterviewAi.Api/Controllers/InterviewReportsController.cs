@@ -1,11 +1,13 @@
 ﻿using InterviewAi.Api.DTOs;
 using InterviewAi.Api.Services;
 
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace InterviewAi.Api.Controllers;
 
 [ApiController]
+[Authorize]
 [Route("api/interview-reports")]
 public class InterviewReportsController(InterviewReportService service) : ControllerBase
 {
@@ -13,6 +15,7 @@ public class InterviewReportsController(InterviewReportService service) : Contro
     [HttpPost]
     [ProducesResponseType<InterviewReportDto>(StatusCodes.Status201Created)]
     [ProducesResponseType<ValidationProblemDetails>(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     public async Task<ActionResult<InterviewReportDto>> Create(
         CreateInterviewReportRequest request,
         CancellationToken cancellationToken)
@@ -25,6 +28,7 @@ public class InterviewReportsController(InterviewReportService service) : Contro
     /// <summary>List the current user's reports, newest first.</summary>
     [HttpGet]
     [ProducesResponseType<IReadOnlyList<InterviewReportSummaryDto>>(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     public async Task<ActionResult<IReadOnlyList<InterviewReportSummaryDto>>> List(
         CancellationToken cancellationToken)
     {
@@ -36,6 +40,7 @@ public class InterviewReportsController(InterviewReportService service) : Contro
     /// <summary>Get one report by id.</summary>
     [HttpGet("{id:guid}")]
     [ProducesResponseType<InterviewReportDto>(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<ActionResult<InterviewReportDto>> GetById(
         Guid id,
