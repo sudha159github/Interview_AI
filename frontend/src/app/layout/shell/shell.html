@@ -1,0 +1,21 @@
+<mat-toolbar class="app-toolbar">
+  <a routerLink="/" class="brand">
+    <mat-icon>psychology</mat-icon>
+    <span>Interview AI</span>
+  </a>
+
+  <span class="spacer"></span>
+
+  @if (auth.currentUser(); as user) {
+    <span class="user-name">{{ user.userName }}</span>
+  }
+
+  <button matButton (click)="logout()">
+    <mat-icon>logout</mat-icon>
+    Log out
+  </button>
+</mat-toolbar>
+
+<main class="app-content">
+  <router-outlet />
+</main>

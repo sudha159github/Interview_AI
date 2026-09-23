@@ -1,0 +1,41 @@
+:host {
+  display: block;
+  padding: 16px 0;
+}
+
+.question-title {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 12px 0;
+  line-height: 1.4;
+  white-space: normal;
+}
+
+.number {
+  flex-shrink: 0;
+  font-weight: 700;
+  color: var(--mat-sys-primary);
+}
+
+.section {
+  margin-bottom: 12px;
+
+  h4 {
+    margin: 0 0 4px;
+    font-size: 13px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--mat-sys-primary);
+  }
+
+  p {
+    margin: 0;
+    line-height: 1.6;
+    white-space: pre-line;
+  }
+}
+
+.empty {
+  color: var(--mat-sys-on-surface-variant);
+}

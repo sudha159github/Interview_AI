@@ -1,0 +1,90 @@
+<section class="hero">
+  <h1>Create your <span class="highlight">interview plan</span></h1>
+  <p>
+    Paste a job description and tell us about yourself. You'll get likely interview questions
+    with model answers, your skill gaps and a day-by-day preparation plan.
+  </p>
+</section>
+
+<mat-card appearance="outlined" class="generate-card">
+  <mat-card-content>
+    <form [formGroup]="form" (ngSubmit)="generate()" novalidate>
+      <div class="fields">
+        <mat-form-field appearance="outline">
+          <mat-label>Target job description</mat-label>
+          <textarea
+            matInput
+            formControlName="jobDescription"
+            rows="12"
+            placeholder="Paste the full job description here..."
+          ></textarea>
+          <mat-hint align="end">{{ form.controls.jobDescription.value.length }} / 5000</mat-hint>
+          @if (form.controls.jobDescription.hasError('required')) {
+            <mat-error>A job description is required</mat-error>
+          } @else if (form.controls.jobDescription.hasError('minlength')) {
+            <mat-error>Please paste at least 50 characters</mat-error>
+          } @else if (form.controls.jobDescription.hasError('maxlength')) {
+            <mat-error>At most 5000 characters</mat-error>
+          }
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>About you</mat-label>
+          <textarea
+            matInput
+            formControlName="selfDescription"
+            rows="12"
+            placeholder="Your experience, key skills, projects and years of experience..."
+          ></textarea>
+          <mat-hint align="end">{{ form.controls.selfDescription.value.length }} / 3000</mat-hint>
+          @if (form.controls.selfDescription.hasError('required')) {
+            <mat-error>Tell us a little about yourself</mat-error>
+          } @else if (form.controls.selfDescription.hasError('minlength')) {
+            <mat-error>Please write at least 20 characters</mat-error>
+          } @else if (form.controls.selfDescription.hasError('maxlength')) {
+            <mat-error>At most 3000 characters</mat-error>
+          }
+        </mat-form-field>
+      </div>
+
+      @if (errorMessage(); as message) {
+        <div class="form-error" role="alert">{{ message }}</div>
+      }
+
+      <div class="actions">
+        <span class="note">AI-generated · usually takes under a minute</span>
+        <button matButton="filled" type="submit" [disabled]="generating()">
+          @if (generating()) {
+            <span class="busy"><mat-spinner diameter="18" /> Generating your plan…</span>
+          } @else {
+            Generate my interview plan
+          }
+        </button>
+      </div>
+    </form>
+  </mat-card-content>
+</mat-card>
+
+<section class="recent">
+  <h2>My interview plans</h2>
+
+  @if (loadingReports()) {
+    <mat-spinner diameter="32" />
+  } @else if (reportsError(); as message) {
+    <div class="form-error" role="alert">{{ message }}</div>
+  } @else if (myReports().length === 0) {
+    <p class="empty">No plans yet. Generate your first one above.</p>
+  } @else {
+    <div class="report-grid">
+      @for (report of myReports(); track report.id) {
+        <a class="report-item" [routerLink]="['/reports', report.id]">
+          <div class="report-text">
+            <h3>{{ report.title }}</h3>
+            <p>{{ report.createdAt | date: 'mediumDate' }}</p>
+          </div>
+          <app-score-badge [score]="report.matchScore" />
+        </a>
+      }
+    </div>
+  }
+</section>

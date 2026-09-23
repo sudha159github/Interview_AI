@@ -1,0 +1,32 @@
+:host {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 48px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+// light-dark(lightValue, darkValue) follows the system colour scheme
+:host(.score-badge--high) {
+  background: light-dark(#d6f5df, #1d4a2b);
+  color: light-dark(#0b6b2e, #a6f0bc);
+}
+
+:host(.score-badge--mid) {
+  background: light-dark(#fff1cc, #4d3b0a);
+  color: light-dark(#8a5a00, #ffd98a);
+}
+
+:host(.score-badge--low) {
+  background: var(--mat-sys-error-container);
+  color: var(--mat-sys-on-error-container);
+}
+
+:host(.score-badge--large) {
+  min-width: 88px;
+  padding: 10px 18px;
+  font-size: 28px;
+}
