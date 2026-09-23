@@ -13,11 +13,13 @@ public class InterviewReportsController(InterviewReportService service) : Contro
 {
     /// <summary>Generate a new interview report.</summary>
     [HttpPost]
+    [Consumes("multipart/form-data")]
+    [RequestSizeLimit(6 * 1024 * 1024)]
     [ProducesResponseType<InterviewReportDto>(StatusCodes.Status201Created)]
     [ProducesResponseType<ValidationProblemDetails>(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     public async Task<ActionResult<InterviewReportDto>> Create(
-        CreateInterviewReportRequest request,
+        [FromForm] CreateInterviewReportRequest request,
         CancellationToken cancellationToken)
     {
         var report = await service.GenerateAsync(request, cancellationToken);

@@ -2,6 +2,7 @@ using System.Text;
 
 using InterviewAi.Api.AI;
 using InterviewAi.Api.Data;
+using InterviewAi.Api.Documents;
 using InterviewAi.Api.Models;
 using InterviewAi.Api.Services;
 
@@ -83,44 +84,56 @@ builder.Services
 
 builder.Services.AddAuthorization();
 
-// ---------- AI: real Gemini, or the fake generator for offline development ----------
+// ---------- AI provider: Groq, Gemini, or a deterministic fake ----------
 
-if (builder.Configuration.GetValue<bool>("Ai:UseFakeGenerator"))
+var aiProvider = builder.Configuration["Ai:Provider"] ?? "Fake";
+
+switch (aiProvider.ToLowerInvariant())
 {
-    builder.Services.AddScoped<IInterviewReportGenerator, FakeInterviewReportGenerator>();
-}
-else
-{
-    builder.Services.AddOptions<GeminiOptions>()
-        .Bind(builder.Configuration.GetSection(GeminiOptions.SectionName))
-        .ValidateDataAnnotations()
-        .ValidateOnStart();
+    case "groq":
+        builder.Services.AddOptions<GroqOptions>()
+            .Bind(builder.Configuration.GetSection(GroqOptions.SectionName))
+            .ValidateDataAnnotations()
+            .ValidateOnStart();
 
-    builder.Services
-        .AddHttpClient<IInterviewReportGenerator, GeminiInterviewReportGenerator>((serviceProvider, client) =>
-        {
-            var gemini = serviceProvider.GetRequiredService<IOptions<GeminiOptions>>().Value;
+        builder.Services
+            .AddHttpClient<IInterviewReportGenerator, GroqInterviewReportGenerator>((serviceProvider, client) =>
+            {
+                var groq = serviceProvider.GetRequiredService<IOptions<GroqOptions>>().Value;
 
-            client.BaseAddress = new Uri(gemini.BaseUrl);
+                client.BaseAddress = new Uri(groq.BaseUrl);
+                client.DefaultRequestHeaders.Authorization =
+                    new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", groq.ApiKey);
 
-            // API key in a header, never in the URL (URLs end up in logs)
-            client.DefaultRequestHeaders.Add("x-goog-api-key", gemini.ApiKey);
+                client.Timeout = Timeout.InfiniteTimeSpan;   // the resilience handler controls timeouts
+            })
+            .AddStandardResilienceHandler(ConfigureAiResilience);
+        break;
 
-            // The resilience handler below controls all timeouts
-            client.Timeout = Timeout.InfiniteTimeSpan;
-        })
-        .AddStandardResilienceHandler(resilience =>
-        {
-            // AI responses can take tens of seconds
-            resilience.AttemptTimeout.Timeout = TimeSpan.FromSeconds(90);
-            resilience.TotalRequestTimeout.Timeout = TimeSpan.FromSeconds(200);
+    case "gemini":
+        builder.Services.AddOptions<GeminiOptions>()
+            .Bind(builder.Configuration.GetSection(GeminiOptions.SectionName))
+            .ValidateDataAnnotations()
+            .ValidateOnStart();
 
-            // Must be at least twice the attempt timeout
-            resilience.CircuitBreaker.SamplingDuration = TimeSpan.FromSeconds(200);
+        builder.Services
+            .AddHttpClient<IInterviewReportGenerator, GeminiInterviewReportGenerator>((serviceProvider, client) =>
+            {
+                var gemini = serviceProvider.GetRequiredService<IOptions<GeminiOptions>>().Value;
 
-            // Retries cost quota: keep them few (only transient errors: 429, 5xx, timeouts)
-            resilience.Retry.MaxRetryAttempts = 2;
-        });
+                client.BaseAddress = new Uri(gemini.BaseUrl);
+
+                // API key in a header, never in the URL (URLs end up in logs)
+                client.DefaultRequestHeaders.Add("x-goog-api-key", gemini.ApiKey);
+
+                client.Timeout = Timeout.InfiniteTimeSpan;
+            })
+            .AddStandardResilienceHandler(ConfigureAiResilience);
+        break;
+
+    default:
+        builder.Services.AddScoped<IInterviewReportGenerator, FakeInterviewReportGenerator>();
+        break;
 }
 
 // ---------- Application services ----------
@@ -129,6 +142,7 @@ builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<ICurrentUser, HttpContextCurrentUser>();
 builder.Services.AddScoped<TokenService>();
 builder.Services.AddScoped<AuthService>();
+builder.Services.AddScoped<IResumeTextExtractor, ResumeTextExtractor>();
 builder.Services.AddScoped<InterviewReportService>();
 
 builder.Services.AddControllers();
@@ -156,3 +170,18 @@ app.UseAuthorization();    // 2. check [Authorize] → are they allowed?
 app.MapControllers();
 
 app.Run();
+
+// AI calls are slow and occasionally fail: same policy for every provider.
+// Retries wait a few seconds because free tiers limit requests per second.
+static void ConfigureAiResilience(Microsoft.Extensions.Http.Resilience.HttpStandardResilienceOptions resilience)
+{
+    resilience.AttemptTimeout.Timeout = TimeSpan.FromSeconds(60);
+    resilience.TotalRequestTimeout.Timeout = TimeSpan.FromSeconds(150);
+
+    // Must be at least twice the attempt timeout
+    resilience.CircuitBreaker.SamplingDuration = TimeSpan.FromSeconds(150);
+
+    resilience.Retry.MaxRetryAttempts = 1;
+    resilience.Retry.Delay = TimeSpan.FromSeconds(3);
+    resilience.Retry.UseJitter = true;
+}

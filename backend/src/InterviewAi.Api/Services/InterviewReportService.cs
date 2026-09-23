@@ -1,5 +1,6 @@
 ﻿using InterviewAi.Api.AI;
 using InterviewAi.Api.Data;
+using InterviewAi.Api.Documents;
 using InterviewAi.Api.DTOs;
 using InterviewAi.Api.Models;
 
@@ -13,6 +14,7 @@ namespace InterviewAi.Api.Services;
 public class InterviewReportService(
     AppDbContext db,
     IInterviewReportGenerator generator,
+    IResumeTextExtractor resumeTextExtractor,
     ICurrentUser currentUser,
     ILogger<InterviewReportService> logger)
 {
@@ -23,17 +25,28 @@ public class InterviewReportService(
         CreateInterviewReportRequest request,
         CancellationToken cancellationToken)
     {
-        // 1. Ask the AI
+        // 1. Read the resume, if one was uploaded
+        string? resumeText = null;
+
+        if (request.Resume is not null)
+        {
+            await using var stream = request.Resume.OpenReadStream();
+
+            resumeText = await resumeTextExtractor.ExtractTextAsync(
+                stream, request.Resume.FileName, cancellationToken);
+        }
+
+        // 2. Ask the AI
         var aiResult = await generator.GenerateAsync(
             request.JobDescription,
-            resumeText: null,
+            resumeText,
             request.SelfDescription,
             cancellationToken);
 
-        // 2. Never trust AI output: check it before saving
+        // 3. Never trust AI output: check it before saving
         ValidateAiResult(aiResult);
 
-        // 3. Build the database entity
+        // 4. Build the database entity
         var now = DateTimeOffset.UtcNow;
 
         var report = new InterviewReport
@@ -41,6 +54,7 @@ public class InterviewReportService(
             OwnerId = currentUser.UserId,
             Title = aiResult.Title.Trim(),
             JobDescription = request.JobDescription,
+            ResumeText = resumeText,
             SelfDescription = request.SelfDescription,
             MatchScore = aiResult.MatchScore,
             CreatedAt = now,
@@ -70,15 +84,15 @@ public class InterviewReportService(
             ]
         };
 
-        // 4. Save the report and all its children in one go
+        // 5. Save the report and all its children in one go
         db.InterviewReports.Add(report);
         await db.SaveChangesAsync(cancellationToken);
 
         logger.LogInformation(
-            "Generated interview report {ReportId} for user {UserId} with match score {MatchScore}",
-            report.Id, report.OwnerId, report.MatchScore);
+            "Generated interview report {ReportId} for user {UserId} with match score {MatchScore} (resume uploaded: {HasResume})",
+            report.Id, report.OwnerId, report.MatchScore, resumeText is not null);
 
-        // 5. Return the DTO, not the entity
+        // 6. Return the DTO, not the entity
         return ToDto(report);
     }
 

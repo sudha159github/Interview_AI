@@ -32,6 +32,41 @@
   }
 }
 
+// ---------- Resume upload ----------
+
+.resume-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin: 8px 0 16px;
+}
+
+.file-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 8px 6px 14px;
+  border-radius: 999px;
+  background: var(--mat-sys-secondary-container);
+  color: var(--mat-sys-on-secondary-container);
+
+  .file-name {
+    font-weight: 500;
+    max-width: 260px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .file-size {
+    font-size: 12px;
+    opacity: 0.8;
+  }
+}
+
+// ---------- Actions ----------
+
 .actions {
   display: flex;
   align-items: center;
@@ -56,6 +91,8 @@
   align-items: center;
   gap: 8px;
 }
+
+// ---------- My interview plans ----------
 
 .recent {
   margin-top: 40px;

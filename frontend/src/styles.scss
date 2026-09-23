@@ -1,18 +1,24 @@
-@use '@angular/material' as mat;
 
-// ---------- Angular Material theme ----------
+@use '@angular/material' as mat;
+@use './theme-colors' as theme;
+
 html {
-  // Follows the user's system setting: light or dark mode automatically
   color-scheme: light dark;
 
   @include mat.theme((
-    color: (
-      primary: mat.$violet-palette,
-      tertiary: mat.$rose-palette,
-    ),
-    typography: Roboto,
-    density: 0,
-  ));
+  color: (
+    primary: mat.$violet-palette,
+    tertiary: mat.$rose-palette,
+  ),
+  typography: (
+    plain-family: 'Inter, system-ui, sans-serif',
+    brand-family: '"Space Grotesk", Inter, sans-serif',
+    bold-weight: 700,
+    medium-weight: 600,
+    regular-weight: 400,
+  ),
+  density: 0,
+));
 }
 
 // ---------- Global page styles ----------
@@ -21,11 +27,18 @@ body {
   height: 100%;
 }
 
+
 body {
   margin: 0;
-  font-family: Roboto, 'Helvetica Neue', sans-serif;
+  font-family: Inter, system-ui, sans-serif;
   background: var(--mat-sys-surface);
   color: var(--mat-sys-on-surface);
+  -webkit-font-smoothing: antialiased;   // crisper text on macOS
+}
+
+h1, h2, h3 {
+  font-family: 'Space Grotesk', Inter, sans-serif;
+  letter-spacing: -0.02em;               // tighter headings read as more "designed"
 }
 
 
@@ -84,6 +97,29 @@ body {
   margin: -12px 0 8px 16px;
   font-size: 12px;
   color: var(--mat-sys-error);
+}
+
+:root {
+  --text-xs: 12px;
+  --text-sm: 13px;
+  --text-base: 15px;
+  --text-lg: 18px;
+  --text-xl: 22px;
+  --text-2xl: 28px;
+  --text-3xl: clamp(28px, 4vw, 40px);
+
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --space-12: 48px;
+
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-pill: 999px;
 }
 
 }

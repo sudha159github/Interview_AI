@@ -1,8 +1,8 @@
 <section class="hero">
   <h1>Create your <span class="highlight">interview plan</span></h1>
   <p>
-    Paste a job description and tell us about yourself. You'll get likely interview questions
-    with model answers, your skill gaps and a day-by-day preparation plan.
+    Paste a job description, then upload your CV or tell us about yourself. You'll get likely
+    interview questions with model answers, your skill gaps and a day-by-day preparation plan.
   </p>
 </section>
 
@@ -29,7 +29,7 @@
         </mat-form-field>
 
         <mat-form-field appearance="outline">
-          <mat-label>About you</mat-label>
+          <mat-label>About you (optional if you upload a CV)</mat-label>
           <textarea
             matInput
             formControlName="selfDescription"
@@ -37,15 +37,62 @@
             placeholder="Your experience, key skills, projects and years of experience..."
           ></textarea>
           <mat-hint align="end">{{ form.controls.selfDescription.value.length }} / 3000</mat-hint>
-          @if (form.controls.selfDescription.hasError('required')) {
-            <mat-error>Tell us a little about yourself</mat-error>
-          } @else if (form.controls.selfDescription.hasError('minlength')) {
+          @if (form.controls.selfDescription.hasError('minlength')) {
             <mat-error>Please write at least 20 characters</mat-error>
           } @else if (form.controls.selfDescription.hasError('maxlength')) {
             <mat-error>At most 3000 characters</mat-error>
           }
         </mat-form-field>
       </div>
+
+      <!-- Resume upload -->
+      <div class="resume-row">
+        <input
+          #fileInput
+          type="file"
+          accept=".pdf,.docx"
+          hidden
+          (change)="onFileSelected($event)"
+        />
+
+        @if (resumeFile(); as file) {
+          <div class="file-chip">
+            <mat-icon>description</mat-icon>
+            <span class="file-name">{{ file.name }}</span>
+            <span class="file-size">{{ formatSize(file.size) }}</span>
+            <button
+              matIconButton
+              type="button"
+              aria-label="Remove file"
+              [disabled]="generating()"
+              (click)="removeFile()"
+            >
+              <mat-icon>close</mat-icon>
+            </button>
+          </div>
+        } @else {
+          <button
+            matButton="outlined"
+            type="button"
+            [disabled]="generating()"
+            (click)="fileInput.click()"
+          >
+            <mat-icon>upload_file</mat-icon>
+            Upload your CV (PDF or DOCX)
+          </button>
+          <span class="note">Optional · max 5 MB · we never share your CV</span>
+        }
+      </div>
+
+      @if (resumeError(); as message) {
+        <p class="field-error" role="alert">{{ message }}</p>
+      }
+
+      @if (missingProfile() && form.controls.selfDescription.touched) {
+        <p class="field-error" role="alert">
+          Please upload your CV or fill in "About you".
+        </p>
+      }
 
       @if (errorMessage(); as message) {
         <div class="form-error" role="alert">{{ message }}</div>
