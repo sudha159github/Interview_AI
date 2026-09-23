@@ -8,6 +8,7 @@ using InterviewAi.Api.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -82,16 +83,52 @@ builder.Services
 
 builder.Services.AddAuthorization();
 
+// ---------- AI: real Gemini, or the fake generator for offline development ----------
+
+if (builder.Configuration.GetValue<bool>("Ai:UseFakeGenerator"))
+{
+    builder.Services.AddScoped<IInterviewReportGenerator, FakeInterviewReportGenerator>();
+}
+else
+{
+    builder.Services.AddOptions<GeminiOptions>()
+        .Bind(builder.Configuration.GetSection(GeminiOptions.SectionName))
+        .ValidateDataAnnotations()
+        .ValidateOnStart();
+
+    builder.Services
+        .AddHttpClient<IInterviewReportGenerator, GeminiInterviewReportGenerator>((serviceProvider, client) =>
+        {
+            var gemini = serviceProvider.GetRequiredService<IOptions<GeminiOptions>>().Value;
+
+            client.BaseAddress = new Uri(gemini.BaseUrl);
+
+            // API key in a header, never in the URL (URLs end up in logs)
+            client.DefaultRequestHeaders.Add("x-goog-api-key", gemini.ApiKey);
+
+            // The resilience handler below controls all timeouts
+            client.Timeout = Timeout.InfiniteTimeSpan;
+        })
+        .AddStandardResilienceHandler(resilience =>
+        {
+            // AI responses can take tens of seconds
+            resilience.AttemptTimeout.Timeout = TimeSpan.FromSeconds(90);
+            resilience.TotalRequestTimeout.Timeout = TimeSpan.FromSeconds(200);
+
+            // Must be at least twice the attempt timeout
+            resilience.CircuitBreaker.SamplingDuration = TimeSpan.FromSeconds(200);
+
+            // Retries cost quota: keep them few (only transient errors: 429, 5xx, timeouts)
+            resilience.Retry.MaxRetryAttempts = 2;
+        });
+}
+
 // ---------- Application services ----------
 
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<ICurrentUser, HttpContextCurrentUser>();
 builder.Services.AddScoped<TokenService>();
 builder.Services.AddScoped<AuthService>();
-
-// TEMPORARY: fake AI until Gemini is connected (Phase 8)
-builder.Services.AddScoped<IInterviewReportGenerator, FakeInterviewReportGenerator>();
-
 builder.Services.AddScoped<InterviewReportService>();
 
 builder.Services.AddControllers();
