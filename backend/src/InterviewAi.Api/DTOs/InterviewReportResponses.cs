@@ -2,21 +2,28 @@
 
 /// <summary>Full report, returned when viewing a single report.</summary>
 public record InterviewReportDto(
-    Guid Id,
-    string Title,
-    int MatchScore,
-    DateTimeOffset CreatedAt,
-    IReadOnlyList<InterviewQuestionDto> TechnicalQuestions,
-    IReadOnlyList<InterviewQuestionDto> BehavioralQuestions,
-    IReadOnlyList<SkillGapDto> SkillGaps,
-    IReadOnlyList<PreparationDayDto> PreparationPlan);
-
+Guid Id,
+string Title,
+string? CompanyName,
+int MatchScore,
+DateTimeOffset CreatedAt,
+DateTimeOffset? InterviewDate,
+string Status,
+int? DaysUntilInterview,
+IReadOnlyList<InterviewQuestionDto> TechnicalQuestions,
+IReadOnlyList<InterviewQuestionDto> BehavioralQuestions,
+IReadOnlyList<SkillGapDto> SkillGaps,
+IReadOnlyList<PreparationDayDto> PreparationPlan);
 /// <summary>Short version, returned in the "my reports" list.</summary>
 public record InterviewReportSummaryDto(
-    Guid Id,
-    string Title,
-    int MatchScore,
-    DateTimeOffset CreatedAt);
+Guid Id,
+string Title,
+string? CompanyName,
+int MatchScore,
+DateTimeOffset CreatedAt,
+DateTimeOffset? InterviewDate,
+string Status,
+int? DaysUntilInterview);
 
 public record InterviewQuestionDto(
     string Question,

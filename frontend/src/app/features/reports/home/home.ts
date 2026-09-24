@@ -2,15 +2,19 @@ import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { DatePipe } from '@angular/common';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
+
 import { MatButton } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
+import { MatDatepickerModule } from '@angular/material/datepicker';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIcon } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
 import { MatProgressSpinner } from '@angular/material/progress-spinner';
+
 import { InterviewReportSummary } from '../../../core/models/report.models';
 import { ReportsService } from '../../../core/services/reports.service';
 import { getErrorMessage } from '../../../core/utils/api-error';
+import { Countdown } from '../../../shared/countdown/countdown';
 import { ScoreBadge } from '../../../shared/score-badge/score-badge';
 
 /** Must match the API: 5 MB, PDF or DOCX only. */
@@ -23,12 +27,16 @@ const ALLOWED_EXTENSIONS = ['.pdf', '.docx'];
     DatePipe,
     ReactiveFormsModule,
     RouterLink,
+
     MatButton,
     MatCardModule,
+    MatDatepickerModule,
     MatFormFieldModule,
     MatIcon,
     MatInputModule,
     MatProgressSpinner,
+
+    Countdown,
     ScoreBadge,
   ],
   templateUrl: './home.html',
@@ -48,19 +56,52 @@ export class Home implements OnInit {
   protected readonly resumeError = signal<string | null>(null);
 
   protected readonly form = this.fb.nonNullable.group({
-    jobDescription: ['', [Validators.required, Validators.minLength(50), Validators.maxLength(5000)]],
-    selfDescription: ['', [Validators.minLength(20), Validators.maxLength(3000)]],
+    jobDescription: [
+      '',
+      [
+        Validators.required,
+        Validators.minLength(50),
+        Validators.maxLength(5000),
+      ],
+    ],
+
+    selfDescription: [
+      '',
+      [
+        Validators.minLength(20),
+        Validators.maxLength(3000),
+      ],
+    ],
+
+    companyName: [
+      '',
+      [
+        Validators.maxLength(200),
+      ],
+    ],
+
+    interviewDate: [null as Date | null],
   });
+
+  /** The date picker should not allow dates in the past. */
+  protected readonly today = new Date();
 
   /** Business rule: a resume, a self-description, or both. */
   protected readonly missingProfile = computed(
-    () => this.resumeFile() === null && this.form.controls.selfDescription.value.trim().length === 0,
+    () =>
+      this.resumeFile() === null &&
+      this.form.controls.selfDescription.value.trim().length === 0,
   );
 
   // My reports list
-  protected readonly myReports = signal<InterviewReportSummary[]>([]);
-  protected readonly loadingReports = signal(true);
-  protected readonly reportsError = signal<string | null>(null);
+  protected readonly myReports =
+    signal<InterviewReportSummary[]>([]);
+
+  protected readonly loadingReports =
+    signal(true);
+
+  protected readonly reportsError =
+    signal<string | null>(null);
 
   ngOnInit(): void {
     this.loadReports();
@@ -76,22 +117,33 @@ export class Home implements OnInit {
       return;
     }
 
-    const extension = file.name.slice(file.name.lastIndexOf('.')).toLowerCase();
+    const extension =
+      file.name
+        .slice(file.name.lastIndexOf('.'))
+        .toLowerCase();
 
     if (!ALLOWED_EXTENSIONS.includes(extension)) {
-      this.resumeError.set('Please choose a PDF or DOCX file.');
+      this.resumeError.set(
+        'Please choose a PDF or DOCX file.',
+      );
+
       input.value = '';
       return;
     }
 
     if (file.size > MAX_RESUME_BYTES) {
-      this.resumeError.set('The file must be 5 MB or smaller.');
+      this.resumeError.set(
+        'The file must be 5 MB or smaller.',
+      );
+
       input.value = '';
       return;
     }
 
     this.resumeFile.set(file);
-    input.value = ''; // allows re-picking the same file after removing it
+
+    // Allows re-picking the same file after removing it.
+    input.value = '';
   }
 
   protected removeFile(): void {
@@ -113,20 +165,39 @@ export class Home implements OnInit {
 
     this.generating.set(true);
     this.errorMessage.set(null);
-    this.form.disable(); // prevent edits while the AI works
 
-    const { jobDescription, selfDescription } = this.form.getRawValue();
+    // Prevent edits while the AI works.
+    this.form.disable();
+
+    const {
+      jobDescription,
+      selfDescription,
+      companyName,
+      interviewDate,
+    } = this.form.getRawValue();
 
     this.reports
       .create({
         jobDescription,
-        selfDescription: selfDescription.trim() || null,
+        selfDescription:
+          selfDescription.trim() || null,
         resume: this.resumeFile(),
+        companyName:
+          companyName.trim() || null,
+        interviewDate,
       })
       .subscribe({
-        next: (report) => this.router.navigate(['/reports', report.id]),
+        next: (report) =>
+          this.router.navigate([
+            '/reports',
+            report.id,
+          ]),
+
         error: (error: unknown) => {
-          this.errorMessage.set(getErrorMessage(error));
+          this.errorMessage.set(
+            getErrorMessage(error),
+          );
+
           this.generating.set(false);
           this.form.enable();
         },
@@ -139,8 +210,12 @@ export class Home implements OnInit {
         this.myReports.set(reports);
         this.loadingReports.set(false);
       },
+
       error: (error: unknown) => {
-        this.reportsError.set(getErrorMessage(error));
+        this.reportsError.set(
+          getErrorMessage(error),
+        );
+
         this.loadingReports.set(false);
       },
     });

@@ -22,14 +22,20 @@ public class InterviewReportsController(InterviewReportService service) : Contro
         [FromForm] CreateInterviewReportRequest request,
         CancellationToken cancellationToken)
     {
-        var report = await service.GenerateAsync(request, cancellationToken);
+        var report = await service.GenerateAsync(
+            request,
+            cancellationToken);
 
-        return CreatedAtAction(nameof(GetById), new { id = report.Id }, report);
+        return CreatedAtAction(
+            nameof(GetById),
+            new { id = report.Id },
+            report);
     }
 
     /// <summary>List the current user's reports, newest first.</summary>
     [HttpGet]
-    [ProducesResponseType<IReadOnlyList<InterviewReportSummaryDto>>(StatusCodes.Status200OK)]
+    [ProducesResponseType<IReadOnlyList<InterviewReportSummaryDto>>(
+        StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     public async Task<ActionResult<IReadOnlyList<InterviewReportSummaryDto>>> List(
         CancellationToken cancellationToken)
@@ -48,8 +54,34 @@ public class InterviewReportsController(InterviewReportService service) : Contro
         Guid id,
         CancellationToken cancellationToken)
     {
-        var report = await service.GetByIdAsync(id, cancellationToken);
+        var report = await service.GetByIdAsync(
+            id,
+            cancellationToken);
 
-        return report is null ? NotFound() : Ok(report);
+        return report is null
+            ? NotFound()
+            : Ok(report);
+    }
+
+    /// <summary>Update the tracking details of a report.</summary>
+    [HttpPatch("{id:guid}")]
+    [ProducesResponseType<InterviewReportDto>(StatusCodes.Status200OK)]
+    [ProducesResponseType<ValidationProblemDetails>(
+        StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<InterviewReportDto>> Update(
+        Guid id,
+        UpdateInterviewReportRequest request,
+        CancellationToken cancellationToken)
+    {
+        var report = await service.UpdateAsync(
+            id,
+            request,
+            cancellationToken);
+
+        return report is null
+            ? NotFound()
+            : Ok(report);
     }
 }

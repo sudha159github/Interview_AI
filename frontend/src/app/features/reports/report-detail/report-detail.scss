@@ -122,3 +122,30 @@
   background: var(--mat-sys-primary-container);
   color: var(--mat-sys-on-primary-container);
 }
+
+.tracking {
+display: flex;
+align-items: center;
+gap: 12px;
+flex-wrap: wrap;
+margin-top: 12px;
+}
+.status-field {
+width: 160px;
+}
+.interview-date {
+display: inline-flex;
+align-items: center;
+gap: 6px;
+font-size: 14px;
+color: var(--mat-sys-on-surface-variant);
+mat-icon {
+width: 18px;
+height: 18px;
+font-size: 18px;
+}
+}
+
+.practice-button {
+margin-top: 8px;
+}

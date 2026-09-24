@@ -12,13 +12,18 @@
       <div class="fields">
         <mat-form-field appearance="outline">
           <mat-label>Target job description</mat-label>
+
           <textarea
             matInput
             formControlName="jobDescription"
             rows="12"
             placeholder="Paste the full job description here..."
           ></textarea>
-          <mat-hint align="end">{{ form.controls.jobDescription.value.length }} / 5000</mat-hint>
+
+          <mat-hint align="end">
+            {{ form.controls.jobDescription.value.length }} / 5000
+          </mat-hint>
+
           @if (form.controls.jobDescription.hasError('required')) {
             <mat-error>A job description is required</mat-error>
           } @else if (form.controls.jobDescription.hasError('minlength')) {
@@ -30,18 +35,58 @@
 
         <mat-form-field appearance="outline">
           <mat-label>About you (optional if you upload a CV)</mat-label>
+
           <textarea
             matInput
             formControlName="selfDescription"
             rows="12"
             placeholder="Your experience, key skills, projects and years of experience..."
           ></textarea>
-          <mat-hint align="end">{{ form.controls.selfDescription.value.length }} / 3000</mat-hint>
+
+          <mat-hint align="end">
+            {{ form.controls.selfDescription.value.length }} / 3000
+          </mat-hint>
+
           @if (form.controls.selfDescription.hasError('minlength')) {
             <mat-error>Please write at least 20 characters</mat-error>
           } @else if (form.controls.selfDescription.hasError('maxlength')) {
             <mat-error>At most 3000 characters</mat-error>
           }
+        </mat-form-field>
+      </div>
+
+      <!-- Application tracking -->
+      <div class="tracking-row">
+        <mat-form-field appearance="outline">
+          <mat-label>Company (optional)</mat-label>
+
+          <input
+            matInput
+            formControlName="companyName"
+            placeholder="e.g. Leapfrog Technology"
+          />
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Interview date (optional)</mat-label>
+
+          <input
+            matInput
+            [matDatepicker]="picker"
+            formControlName="interviewDate"
+            [min]="today"
+          />
+
+          <mat-datepicker-toggle
+            matIconSuffix
+            [for]="picker"
+          ></mat-datepicker-toggle>
+
+          <mat-datepicker #picker></mat-datepicker>
+
+          <mat-hint>
+            We size the plan to the days you have left
+          </mat-hint>
         </mat-form-field>
       </div>
 
@@ -58,8 +103,15 @@
         @if (resumeFile(); as file) {
           <div class="file-chip">
             <mat-icon>description</mat-icon>
-            <span class="file-name">{{ file.name }}</span>
-            <span class="file-size">{{ formatSize(file.size) }}</span>
+
+            <span class="file-name">
+              {{ file.name }}
+            </span>
+
+            <span class="file-size">
+              {{ formatSize(file.size) }}
+            </span>
+
             <button
               matIconButton
               type="button"
@@ -80,12 +132,17 @@
             <mat-icon>upload_file</mat-icon>
             Upload your CV (PDF or DOCX)
           </button>
-          <span class="note">Optional · max 5 MB · we never share your CV</span>
+
+          <span class="note">
+            Optional · max 5 MB · we never share your CV
+          </span>
         }
       </div>
 
       @if (resumeError(); as message) {
-        <p class="field-error" role="alert">{{ message }}</p>
+        <p class="field-error" role="alert">
+          {{ message }}
+        </p>
       }
 
       @if (missingProfile() && form.controls.selfDescription.touched) {
@@ -95,14 +152,26 @@
       }
 
       @if (errorMessage(); as message) {
-        <div class="form-error" role="alert">{{ message }}</div>
+        <div class="form-error" role="alert">
+          {{ message }}
+        </div>
       }
 
       <div class="actions">
-        <span class="note">AI-generated · usually takes under a minute</span>
-        <button matButton="filled" type="submit" [disabled]="generating()">
+        <span class="note">
+          AI-generated · usually takes under a minute
+        </span>
+
+        <button
+          matButton="filled"
+          type="submit"
+          [disabled]="generating()"
+        >
           @if (generating()) {
-            <span class="busy"><mat-spinner diameter="18" /> Generating your plan…</span>
+            <span class="busy">
+              <mat-spinner diameter="18" />
+              Generating your plan…
+            </span>
           } @else {
             Generate my interview plan
           }
@@ -117,19 +186,54 @@
 
   @if (loadingReports()) {
     <mat-spinner diameter="32" />
+
   } @else if (reportsError(); as message) {
-    <div class="form-error" role="alert">{{ message }}</div>
+    <div class="form-error" role="alert">
+      {{ message }}
+    </div>
+
   } @else if (myReports().length === 0) {
-    <p class="empty">No plans yet. Generate your first one above.</p>
+    <p class="empty">
+      No plans yet. Generate your first one above.
+    </p>
+
   } @else {
     <div class="report-grid">
       @for (report of myReports(); track report.id) {
-        <a class="report-item" [routerLink]="['/reports', report.id]">
+        <a
+          class="report-item"
+          [routerLink]="['/reports', report.id]"
+        >
           <div class="report-text">
             <h3>{{ report.title }}</h3>
-            <p>{{ report.createdAt | date: 'mediumDate' }}</p>
+
+            <p>
+              @if (report.companyName) {
+                {{ report.companyName }} -
+              }
+
+              {{ report.createdAt | date: 'mediumDate' }}
+            </p>
+
+            <div class="report-meta">
+              <span
+                class="status-chip"
+                [attr.data-status]="report.status"
+              >
+                {{ report.status }}
+              </span>
+
+              @if (report.interviewDate) {
+                <app-countdown
+                  [days]="report.daysUntilInterview"
+                />
+              }
+            </div>
           </div>
-          <app-score-badge [score]="report.matchScore" />
+
+          <app-score-badge
+            [score]="report.matchScore"
+          />
         </a>
       }
     </div>

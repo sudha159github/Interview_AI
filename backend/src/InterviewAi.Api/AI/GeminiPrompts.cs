@@ -22,27 +22,38 @@ internal static class GeminiPrompts
         - Provide 5 to 8 technical questions and 3 to 5 behavioral questions, specific to this job.
           For each, give the interviewer's intention and a concise suggested answer (at most 150 words).
         - List 0 to 8 skill gaps; severity must be exactly "Low", "Medium" or "High".
-        - Provide a preparation plan of 5 to 7 days, numbered 1, 2, 3... in order,
-          each with a short focus and 2 to 5 concrete tasks.
+        - Provide a preparation plan with exactly the number of days requested in the user message,
+          numbered 1, 2, 3... in order, each with a short focus and 2 to 5 concrete tasks.
         - Write in clear, professional English.
         """;
 
-    public static string BuildUserPrompt(string jobDescription, string? resumeText, string? selfDescription)
+    public static string BuildUserPrompt(
+        string jobDescription,
+        string? resumeText,
+        string? selfDescription,
+        int planDays)
     {
         var profile = new StringBuilder();
 
         if (!string.IsNullOrWhiteSpace(resumeText))
         {
-            profile.AppendLine("Resume:").AppendLine(resumeText.Trim()).AppendLine();
+            profile
+                .AppendLine("Resume:")
+                .AppendLine(resumeText.Trim())
+                .AppendLine();
         }
 
         if (!string.IsNullOrWhiteSpace(selfDescription))
         {
-            profile.AppendLine("Self-description:").AppendLine(selfDescription.Trim());
+            profile
+                .AppendLine("Self-description:")
+                .AppendLine(selfDescription.Trim());
         }
 
         return $"""
             Create the interview preparation report for this candidate and job.
+
+            The preparation plan must have exactly {planDays} day(s), numbered from 1.
 
             <job_description>
             {jobDescription.Trim()}
@@ -62,10 +73,24 @@ internal static class GeminiPrompts
         type = "OBJECT",
         properties = new Dictionary<string, object>
         {
-            ["title"] = new { type = "STRING", description = "Job title of the target role" },
-            ["matchScore"] = new { type = "INTEGER", description = "0-100: how well the candidate matches the job" },
-            ["technicalQuestions"] = QuestionArray("Technical interview questions specific to this job"),
-            ["behavioralQuestions"] = QuestionArray("Behavioral interview questions"),
+            ["title"] = new
+            {
+                type = "STRING",
+                description = "Job title of the target role"
+            },
+
+            ["matchScore"] = new
+            {
+                type = "INTEGER",
+                description = "0-100: how well the candidate matches the job"
+            },
+
+            ["technicalQuestions"] =
+                QuestionArray("Technical interview questions specific to this job"),
+
+            ["behavioralQuestions"] =
+                QuestionArray("Behavioral interview questions"),
+
             ["skillGaps"] = new
             {
                 type = "ARRAY",
@@ -76,12 +101,17 @@ internal static class GeminiPrompts
                     properties = new Dictionary<string, object>
                     {
                         ["skill"] = new { type = "STRING" },
-                        ["severity"] = new { type = "STRING", @enum = new[] { "Low", "Medium", "High" } },
+                        ["severity"] = new
+                        {
+                            type = "STRING",
+                            @enum = new[] { "Low", "Medium", "High" }
+                        },
                     },
                     required = new[] { "skill", "severity" },
                     propertyOrdering = new[] { "skill", "severity" },
                 },
             },
+
             ["preparationPlan"] = new
             {
                 type = "ARRAY",
@@ -93,20 +123,36 @@ internal static class GeminiPrompts
                     {
                         ["day"] = new { type = "INTEGER" },
                         ["focus"] = new { type = "STRING" },
-                        ["tasks"] = new { type = "ARRAY", items = new { type = "STRING" } },
+                        ["tasks"] = new
+                        {
+                            type = "ARRAY",
+                            items = new { type = "STRING" }
+                        },
                     },
                     required = new[] { "day", "focus", "tasks" },
                     propertyOrdering = new[] { "day", "focus", "tasks" },
                 },
             },
         },
+
         required = new[]
         {
-            "title", "matchScore", "technicalQuestions", "behavioralQuestions", "skillGaps", "preparationPlan",
+            "title",
+            "matchScore",
+            "technicalQuestions",
+            "behavioralQuestions",
+            "skillGaps",
+            "preparationPlan",
         },
+
         propertyOrdering = new[]
         {
-            "title", "matchScore", "technicalQuestions", "behavioralQuestions", "skillGaps", "preparationPlan",
+            "title",
+            "matchScore",
+            "technicalQuestions",
+            "behavioralQuestions",
+            "skillGaps",
+            "preparationPlan",
         },
     };
 
@@ -120,11 +166,33 @@ internal static class GeminiPrompts
             properties = new Dictionary<string, object>
             {
                 ["question"] = new { type = "STRING" },
-                ["intention"] = new { type = "STRING", description = "Why an interviewer asks this" },
-                ["suggestedAnswer"] = new { type = "STRING", description = "Key points and approach, at most 150 words" },
+
+                ["intention"] = new
+                {
+                    type = "STRING",
+                    description = "Why an interviewer asks this"
+                },
+
+                ["suggestedAnswer"] = new
+                {
+                    type = "STRING",
+                    description = "Key points and approach, at most 150 words"
+                },
             },
-            required = new[] { "question", "intention", "suggestedAnswer" },
-            propertyOrdering = new[] { "question", "intention", "suggestedAnswer" },
+
+            required = new[]
+            {
+                "question",
+                "intention",
+                "suggestedAnswer"
+            },
+
+            propertyOrdering = new[]
+            {
+                "question",
+                "intention",
+                "suggestedAnswer"
+            },
         },
     };
 }

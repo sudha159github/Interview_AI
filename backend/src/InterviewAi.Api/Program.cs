@@ -17,20 +17,24 @@ var builder = WebApplication.CreateBuilder(args);
 // ---------- Database ----------
 
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection")
-    ?? throw new InvalidOperationException("Connection string 'DefaultConnection' is not configured.");
+    ?? throw new InvalidOperationException(
+        "Connection string 'DefaultConnection' is not configured.");
 
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseSqlServer(connectionString));
 
-// ---------- JWT settings (validated when the app starts) ----------
+// ---------- JWT settings ----------
 
 builder.Services.AddOptions<JwtOptions>()
     .Bind(builder.Configuration.GetSection(JwtOptions.SectionName))
     .ValidateDataAnnotations()
     .ValidateOnStart();
 
-var jwt = builder.Configuration.GetSection(JwtOptions.SectionName).Get<JwtOptions>()
-    ?? throw new InvalidOperationException("The 'Jwt' configuration section is missing.");
+var jwt = builder.Configuration
+    .GetSection(JwtOptions.SectionName)
+    .Get<JwtOptions>()
+    ?? throw new InvalidOperationException(
+        "The 'Jwt' configuration section is missing.");
 
 if (string.IsNullOrWhiteSpace(jwt.SigningKey))
 {
@@ -38,7 +42,7 @@ if (string.IsNullOrWhiteSpace(jwt.SigningKey))
         "Jwt:SigningKey is not configured. Set it with 'dotnet user-secrets set'.");
 }
 
-// ---------- Identity (users, password hashing, lockout) ----------
+// ---------- Identity ----------
 
 builder.Services.AddIdentityCore<ApplicationUser>(options =>
 {
@@ -54,16 +58,16 @@ builder.Services.AddIdentityCore<ApplicationUser>(options =>
     options.Lockout.DefaultLockoutTimeSpan = TimeSpan.FromMinutes(15);
     options.Lockout.AllowedForNewUsers = true;
 })
-    .AddEntityFrameworkStores<AppDbContext>()
-    .AddSignInManager();
+.AddEntityFrameworkStores<AppDbContext>()
+.AddSignInManager();
 
-// ---------- Authentication (who are you?) + Authorization (what may you do?) ----------
+// ---------- Authentication + Authorization ----------
 
 builder.Services
     .AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
     {
-        // Keep claim names exactly as in the token ("sub", "email")
+        // Keep claim names exactly as they appear in the token.
         options.MapInboundClaims = false;
 
         options.TokenValidationParameters = new TokenValidationParameters
@@ -75,7 +79,9 @@ builder.Services
             ValidAudience = jwt.Audience,
 
             ValidateIssuerSigningKey = true,
-            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwt.SigningKey)),
+            IssuerSigningKey =
+                new SymmetricSecurityKey(
+                    Encoding.UTF8.GetBytes(jwt.SigningKey)),
 
             ValidateLifetime = true,
             ClockSkew = TimeSpan.FromSeconds(30)
@@ -84,61 +90,86 @@ builder.Services
 
 builder.Services.AddAuthorization();
 
-// ---------- AI provider: Groq, Gemini, or a deterministic fake ----------
+// ---------- AI provider: Groq or Gemini ----------
 
-var aiProvider = builder.Configuration["Ai:Provider"] ?? "Fake";
+var aiProvider = builder.Configuration["Ai:Provider"];
+
+if (string.IsNullOrWhiteSpace(aiProvider))
+{
+    throw new InvalidOperationException(
+        "Ai:Provider is not configured. Set it to 'Groq' or 'Gemini'.");
+}
 
 switch (aiProvider.ToLowerInvariant())
 {
     case "groq":
+
         builder.Services.AddOptions<GroqOptions>()
             .Bind(builder.Configuration.GetSection(GroqOptions.SectionName))
             .ValidateDataAnnotations()
             .ValidateOnStart();
 
         builder.Services
-            .AddHttpClient<IInterviewReportGenerator, GroqInterviewReportGenerator>((serviceProvider, client) =>
-            {
-                var groq = serviceProvider.GetRequiredService<IOptions<GroqOptions>>().Value;
+            .AddHttpClient<IInterviewReportGenerator, GroqInterviewReportGenerator>(
+                (serviceProvider, client) =>
+                {
+                    var groq = serviceProvider
+                        .GetRequiredService<IOptions<GroqOptions>>()
+                        .Value;
 
-                client.BaseAddress = new Uri(groq.BaseUrl);
-                client.DefaultRequestHeaders.Authorization =
-                    new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", groq.ApiKey);
+                    client.BaseAddress = new Uri(groq.BaseUrl);
 
-                client.Timeout = Timeout.InfiniteTimeSpan;   // the resilience handler controls timeouts
-            })
+                    client.DefaultRequestHeaders.Authorization =
+                        new System.Net.Http.Headers.AuthenticationHeaderValue(
+                            "Bearer",
+                            groq.ApiKey);
+
+                    // Resilience handler controls the actual timeout.
+                    client.Timeout = Timeout.InfiniteTimeSpan;
+                })
             .AddStandardResilienceHandler(ConfigureAiResilience);
+
         break;
 
     case "gemini":
+
         builder.Services.AddOptions<GeminiOptions>()
             .Bind(builder.Configuration.GetSection(GeminiOptions.SectionName))
             .ValidateDataAnnotations()
             .ValidateOnStart();
 
         builder.Services
-            .AddHttpClient<IInterviewReportGenerator, GeminiInterviewReportGenerator>((serviceProvider, client) =>
-            {
-                var gemini = serviceProvider.GetRequiredService<IOptions<GeminiOptions>>().Value;
+            .AddHttpClient<IInterviewReportGenerator, GeminiInterviewReportGenerator>(
+                (serviceProvider, client) =>
+                {
+                    var gemini = serviceProvider
+                        .GetRequiredService<IOptions<GeminiOptions>>()
+                        .Value;
 
-                client.BaseAddress = new Uri(gemini.BaseUrl);
+                    client.BaseAddress = new Uri(gemini.BaseUrl);
 
-                // API key in a header, never in the URL (URLs end up in logs)
-                client.DefaultRequestHeaders.Add("x-goog-api-key", gemini.ApiKey);
+                    // API key is sent in a header, not in the URL.
+                    client.DefaultRequestHeaders.Add(
+                        "x-goog-api-key",
+                        gemini.ApiKey);
 
-                client.Timeout = Timeout.InfiniteTimeSpan;
-            })
+                    client.Timeout = Timeout.InfiniteTimeSpan;
+                })
             .AddStandardResilienceHandler(ConfigureAiResilience);
+
         break;
 
     default:
-        builder.Services.AddScoped<IInterviewReportGenerator, FakeInterviewReportGenerator>();
-        break;
+
+        throw new InvalidOperationException(
+            $"Unknown AI provider '{aiProvider}'. " +
+            "Use 'Groq' or 'Gemini'.");
 }
 
 // ---------- Application services ----------
 
 builder.Services.AddHttpContextAccessor();
+
 builder.Services.AddScoped<ICurrentUser, HttpContextCurrentUser>();
 builder.Services.AddScoped<TokenService>();
 builder.Services.AddScoped<AuthService>();
@@ -147,40 +178,52 @@ builder.Services.AddScoped<InterviewReportService>();
 
 builder.Services.AddControllers();
 
-// Generate the OpenAPI description of our endpoints
+// ---------- OpenAPI ----------
+
 builder.Services.AddOpenApi();
 
 // ---------- Request pipeline ----------
 
 var app = builder.Build();
 
-// Swagger only in Development: never expose API documentation in production
+// Swagger/OpenAPI only in Development.
 if (app.Environment.IsDevelopment())
 {
     app.MapOpenApi();
+
     app.UseSwaggerUI(options =>
-        options.SwaggerEndpoint("/openapi/v1.json", "Interview AI API v1"));
+        options.SwaggerEndpoint(
+            "/openapi/v1.json",
+            "Interview AI API v1"));
 }
 
 app.UseHttpsRedirection();
 
-app.UseAuthentication();   // 1. read and verify the token → who is this?
-app.UseAuthorization();    // 2. check [Authorize] → are they allowed?
+app.UseAuthentication();
+app.UseAuthorization();
 
 app.MapControllers();
 
 app.Run();
 
-// AI calls are slow and occasionally fail: same policy for every provider.
-// Retries wait a few seconds because free tiers limit requests per second.
-static void ConfigureAiResilience(Microsoft.Extensions.Http.Resilience.HttpStandardResilienceOptions resilience)
+// ---------- AI resilience ----------
+
+static void ConfigureAiResilience(
+    Microsoft.Extensions.Http.Resilience.HttpStandardResilienceOptions resilience)
 {
-    resilience.AttemptTimeout.Timeout = TimeSpan.FromSeconds(60);
-    resilience.TotalRequestTimeout.Timeout = TimeSpan.FromSeconds(150);
+    // Maximum time for one AI attempt.
+    resilience.AttemptTimeout.Timeout =
+        TimeSpan.FromSeconds(60);
 
-    // Must be at least twice the attempt timeout
-    resilience.CircuitBreaker.SamplingDuration = TimeSpan.FromSeconds(150);
+    // Maximum time for the complete request including retry.
+    resilience.TotalRequestTimeout.Timeout =
+        TimeSpan.FromSeconds(150);
 
+    // Circuit breaker sampling period.
+    resilience.CircuitBreaker.SamplingDuration =
+        TimeSpan.FromSeconds(150);
+
+    // One retry after a short delay.
     resilience.Retry.MaxRetryAttempts = 1;
     resilience.Retry.Delay = TimeSpan.FromSeconds(3);
     resilience.Retry.UseJitter = true;

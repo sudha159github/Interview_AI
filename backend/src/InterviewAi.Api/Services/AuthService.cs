@@ -2,6 +2,7 @@
 using InterviewAi.Api.Models;
 
 using Microsoft.AspNetCore.Identity;
+using Microsoft.Extensions.Options;
 
 namespace InterviewAi.Api.Services;
 
@@ -14,7 +15,7 @@ public enum AuthErrorType
     InvalidCredentials = 3
 }
 
-/// <summary>Outcome of a register or login attempt.</summary>
+/// <summary>Outcome of a register, login or refresh attempt.</summary>
 public record AuthResult(AuthResponse? Response, AuthErrorType ErrorType, IReadOnlyList<string> Errors)
 {
     public bool Succeeded => Response is not null;
@@ -27,14 +28,17 @@ public record AuthResult(AuthResponse? Response, AuthErrorType ErrorType, IReadO
 }
 
 /// <summary>
-/// Registration and login logic, built on ASP.NET Core Identity.
+/// Registration, login and session renewal, built on ASP.NET Core Identity.
 /// </summary>
 public class AuthService(
     UserManager<ApplicationUser> userManager,
     SignInManager<ApplicationUser> signInManager,
     TokenService tokenService,
+    IOptions<JwtOptions> jwtOptions,
     ILogger<AuthService> logger)
 {
+    private readonly JwtOptions _jwt = jwtOptions.Value;
+
     public async Task<AuthResult> RegisterAsync(RegisterRequest request)
     {
         // 1. Email and username must be unique
@@ -101,6 +105,43 @@ public class AuthService(
         logger.LogInformation("User {UserId} logged in", user.Id);
 
         return AuthResult.Success(CreateResponse(user));
+    }
+
+    /// <summary>
+    /// Issues a fresh access token for an already-authenticated request,
+    /// as long as the session has not exceeded its maximum length.
+    /// </summary>
+    public async Task<AuthResult> RefreshAsync(Guid userId, DateTimeOffset sessionStartedAt)
+    {
+        var user = await userManager.FindByIdAsync(userId.ToString());
+
+        if (user is null)
+        {
+            return AuthResult.Failure(AuthErrorType.InvalidCredentials, "This session is no longer valid.");
+        }
+
+        if (await userManager.IsLockedOutAsync(user))
+        {
+            logger.LogWarning("Refresh refused for locked-out user {UserId}", user.Id);
+
+            return AuthResult.Failure(AuthErrorType.InvalidCredentials, "This account is locked.");
+        }
+
+        var sessionAge = DateTimeOffset.UtcNow - sessionStartedAt;
+
+        if (sessionAge > TimeSpan.FromHours(_jwt.MaxSessionHours))
+        {
+            logger.LogInformation("Session for user {UserId} reached its maximum length", user.Id);
+
+            return AuthResult.Failure(
+                AuthErrorType.InvalidCredentials,
+                "Your session has reached its maximum length. Please sign in again.");
+        }
+
+        // Keep the original session start so the maximum length still applies
+        var token = tokenService.CreateAccessToken(user, sessionStartedAt);
+
+        return AuthResult.Success(new AuthResponse(token.Token, token.ExpiresAt, ToUserDto(user)));
     }
 
     public async Task<UserDto?> GetUserAsync(Guid userId)

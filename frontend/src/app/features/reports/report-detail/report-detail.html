@@ -4,53 +4,114 @@
 </a>
 
 @if (loading()) {
-  <div class="center"><mat-spinner /></div>
+  <div class="center">
+    <mat-spinner />
+  </div>
 } @else if (errorMessage(); as message) {
-  <div class="form-error" role="alert">{{ message }}</div>
+  <div class="form-error" role="alert">
+    {{ message }}
+  </div>
 } @else if (report(); as r) {
   <header class="report-header">
     <div>
       <h1>{{ r.title }}</h1>
-      <p class="meta">Generated {{ r.createdAt | date: 'medium' }}</p>
+
+      <p class="meta">
+        @if (r.companyName) {
+          {{ r.companyName }} -
+        }
+
+        Generated {{ r.createdAt | date: 'medium' }}
+      </p>
+
+      <div class="tracking">
+        <mat-form-field
+          appearance="outline"
+          subscriptSizing="dynamic"
+          class="status-field"
+        >
+          <mat-label>Status</mat-label>
+
+          <mat-select
+            [value]="r.status"
+            [disabled]="savingStatus()"
+            (valueChange)="changeStatus($event)"
+          >
+            @for (status of statuses; track status) {
+              <mat-option [value]="status">
+                {{ status }}
+              </mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+
+        @if (r.interviewDate) {
+          <span class="interview-date">
+            <mat-icon>event</mat-icon>
+            {{ r.interviewDate | date: 'fullDate' }}
+          </span>
+
+          <app-countdown [days]="r.daysUntilInterview" />
+        }
+      </div>
     </div>
 
     <div class="score-box">
       <span class="score-label">Match score</span>
-      <app-score-badge [score]="r.matchScore" size="large" />
+      <app-score-badge
+        [score]="r.matchScore"
+        size="large"
+      />
     </div>
   </header>
 
   <section class="gaps">
     <h2>Skill gaps</h2>
+
     @if (r.skillGaps.length === 0) {
       <p class="empty">No significant skill gaps found. 🎉</p>
     } @else {
       <div class="gap-list">
         @for (gap of r.skillGaps; track gap.skill) {
-          <span class="gap" [attr.data-severity]="gap.severity">
-            {{ gap.skill }} <small>{{ gap.severity }}</small>
+          <span
+            class="gap"
+            [attr.data-severity]="gap.severity"
+          >
+            {{ gap.skill }}
+            <small>{{ gap.severity }}</small>
           </span>
         }
       </div>
     }
   </section>
 
-  <mat-tab-group animationDuration="150ms" class="tabs">
+  <mat-tab-group
+    animationDuration="150ms"
+    class="tabs"
+  >
     <mat-tab [label]="'Technical (' + r.technicalQuestions.length + ')'">
-      <app-question-list [questions]="r.technicalQuestions" />
+      <app-question-list
+        [questions]="r.technicalQuestions"
+      />
     </mat-tab>
 
     <mat-tab [label]="'Behavioral (' + r.behavioralQuestions.length + ')'">
-      <app-question-list [questions]="r.behavioralQuestions" />
+      <app-question-list
+        [questions]="r.behavioralQuestions"
+      />
     </mat-tab>
 
     <mat-tab [label]="'Preparation plan (' + r.preparationPlan.length + ' days)'">
       <div class="plan">
         @for (day of r.preparationPlan; track day.dayNumber) {
           <div class="day">
-            <span class="day-badge">Day {{ day.dayNumber }}</span>
+            <span class="day-badge">
+              Day {{ day.dayNumber }}
+            </span>
+
             <div>
               <h3>{{ day.focus }}</h3>
+
               <ul>
                 @for (task of day.tasks; track $index) {
                   <li>{{ task }}</li>

@@ -1,0 +1,116 @@
+<a matButton [routerLink]="['/reports', report()?.id]" class="back">
+<mat-icon>arrow_back</mat-icon>
+Back to the plan
+</a>
+@if (loading()) {
+<div class="center"><mat-spinner /></div>
+} @else if (errorMessage() && !report()) {
+<div class="form-error" role="alert">{{ errorMessage() }}</div>
+} @else if (finished()) {
+<mat-card appearance="outlined" class="summary">
+<mat-card-content>
+<h1>Practice complete </h1>
+<p>You answered {{ scores().length }} of {{ total() }} questions.</p>
+<div class="summary-score">
+<span>Average score</span>
+<app-score-badge [score]="averageScore()" size="large" />
+</div>
+<div class="summary-actions">
+<button matButton="filled" (click)="restart()">Practise again</button>
+<a matButton [routerLink]="['/reports', report()?.id]">Back to the plan</a>
+</div>
+</mat-card-content>
+</mat-card>
+} @else if (current(); as question) {
+<div class="practice-header">
+<span class="counter">Question {{ index() + 1 }} of {{ total() }}</span>
+<span class="type-chip">{{ question.type }}</span>
+</div>
+<mat-progress-bar mode="determinate" [value]="progress()" />
+<mat-card appearance="outlined" class="question-card">
+<mat-card-content>
+<h2>{{ question.question }}</h2>
+<p class="intention">
+<mat-icon>info</mat-icon>
+{{ question.intention }}
+</p>
+@if (feedback(); as result) {
+<section class="feedback" role="status">
+<div class="feedback-score">
+<app-score-badge [score]="result.score" size="large" />
+<p>{{ result.starAssessment }}</p>
+</div>
+<div class="feedback-lists">
+<div>
+<h4>What worked</h4>
+<ul>
+@for (item of result.strengths; track $index) {
+<li>{{ item }}</li>
+}
+</ul>
+</div>
+<div>
+<h4>What to improve</h4>
+<ul>
+@for (item of result.improvements; track $index) {
+<li>{{ item }}</li>
+}
+</ul>
+</div>
+</div>
+@if (result.missingKeywords.length > 0) {
+<div class="keywords">
+<h4>Words an interviewer would expect</h4>
+<div class="keyword-list">
+@for (word of result.missingKeywords; track $index) {
+<span class="keyword">{{ word }}</span>
+}
+</div>
+</div>
+}
+<details class="model-answer">
+<summary>Show a strong model answer</summary>
+<p>{{ question.suggestedAnswer }}</p>
+</details>
+<button matButton="filled" (click)="next()">
+@if (index() + 1 >= total()) {
+Finish
+} @else {
+Next question
+}
+</button>
+</section>
+} @else {
+<mat-form-field appearance="outline" class="answer-field">
+<mat-label>Your answer</mat-label>
+<textarea
+matInput
+rows="10"
+[ngModel]="answerText()"
+(ngModelChange)="answerText.set($event)"
+[disabled]="scoring()"
+placeholder="Answer as you would out loud. Aim for 100-200 words."
+></textarea>
+<mat-hint align="end">{{ answerText().length }} characters</mat-hint>
+</mat-form-field>
+@if (errorMessage(); as message) {
+<div class="form-error" role="alert">{{ message }}</div>
+}
+<div class="answer-actions">
+<span class="note">Scored by AI - usually a few seconds</span>
+<button
+matButton="filled"
+[disabled]="scoring() || answerText().trim().length < 20"
+(click)="submit()"
+>
+@if (scoring()) {
+<span class="busy"><mat-spinner diameter="18" /> Scoring…</span>
+} @else {
+Get feedback
+}
+</button>
+</div>
+}
+</mat-card-content>
+</mat-card>
+}

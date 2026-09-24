@@ -1,25 +1,26 @@
-﻿using System.ComponentModel.DataAnnotations;
-
+﻿
+using System.ComponentModel.DataAnnotations;
 namespace InterviewAi.Api.Services;
-
 /// <summary>
 /// JWT settings, read from the "Jwt" configuration section.
 /// </summary>
 public class JwtOptions
 {
     public const string SectionName = "Jwt";
-
     [Required]
     public string Issuer { get; init; } = string.Empty;
-
     [Required]
     public string Audience { get; init; } = string.Empty;
-
     // Secret: stored in User Secrets (development) or environment variables (production)
     [Required]
     [MinLength(32)]
     public string SigningKey { get; init; } = string.Empty;
-
     [Range(5, 1440)]
     public int AccessTokenMinutes { get; init; } = 60;
+    /// <summary>
+    /// How long a session may be renewed for in total, however many times the
+    /// token is refreshed. After this the user must sign in again.
+    /// </summary>
+    [Range(1, 72)]
+    public int MaxSessionHours { get; init; } = 12;
 }

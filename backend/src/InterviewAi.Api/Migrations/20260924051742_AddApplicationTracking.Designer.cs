@@ -4,6 +4,7 @@ using InterviewAi.Api.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace InterviewAi.Api.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260924051742_AddApplicationTracking")]
+    partial class AddApplicationTracking
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -141,14 +144,7 @@ namespace InterviewAi.Api.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<string>("CompanyName")
-                        .HasMaxLength(200)
-                        .HasColumnType("nvarchar(200)");
-
                     b.Property<DateTimeOffset>("CreatedAt")
-                        .HasColumnType("datetimeoffset");
-
-                    b.Property<DateTimeOffset?>("InterviewDate")
                         .HasColumnType("datetimeoffset");
 
                     b.Property<string>("JobDescription")
@@ -174,13 +170,6 @@ namespace InterviewAi.Api.Migrations
                         .HasMaxLength(3000)
                         .HasColumnType("nvarchar(3000)");
 
-                    b.Property<string>("Status")
-                        .IsRequired()
-                        .ValueGeneratedOnAdd()
-                        .HasMaxLength(20)
-                        .HasColumnType("nvarchar(20)")
-                        .HasDefaultValue("Planned");
-
                     b.Property<string>("Title")
                         .IsRequired()
                         .HasMaxLength(200)
@@ -194,79 +183,11 @@ namespace InterviewAi.Api.Migrations
                     b.HasIndex("OwnerId", "CreatedAt")
                         .IsDescending(false, true);
 
-                    b.HasIndex("OwnerId", "InterviewDate");
-
                     b.ToTable("InterviewReports", null, t =>
                         {
                             t.HasCheckConstraint("CK_InterviewReports_MatchScore", "[MatchScore] BETWEEN 0 AND 100");
 
                             t.HasCheckConstraint("CK_InterviewReports_ResumeOrSelfDescription", "[ResumeText] IS NOT NULL OR [SelfDescription] IS NOT NULL");
-
-                            t.HasCheckConstraint("CK_InterviewReports_Status", "[Status] IN ('Planned', 'Applied', 'Interviewing', 'Offer', 'Rejected')");
-                        });
-                });
-
-            modelBuilder.Entity("InterviewAi.Api.Models.MockAnswer", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<string>("AnswerText")
-                        .IsRequired()
-                        .HasMaxLength(5000)
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<DateTimeOffset>("CreatedAt")
-                        .HasColumnType("datetimeoffset");
-
-                    b.PrimitiveCollection<string>("Improvements")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<Guid>("InterviewReportId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.PrimitiveCollection<string>("MissingKeywords")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<int>("QuestionOrder")
-                        .HasColumnType("int");
-
-                    b.Property<string>("QuestionText")
-                        .IsRequired()
-                        .HasMaxLength(1000)
-                        .HasColumnType("nvarchar(1000)");
-
-                    b.Property<string>("QuestionType")
-                        .IsRequired()
-                        .HasMaxLength(20)
-                        .HasColumnType("nvarchar(20)");
-
-                    b.Property<int>("Score")
-                        .HasColumnType("int");
-
-                    b.Property<string>("StarAssessment")
-                        .IsRequired()
-                        .HasMaxLength(500)
-                        .HasColumnType("nvarchar(500)");
-
-                    b.PrimitiveCollection<string>("Strengths")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("InterviewReportId", "CreatedAt");
-
-                    b.ToTable("MockAnswers", null, t =>
-                        {
-                            t.HasCheckConstraint("CK_MockAnswers_QuestionType", "[QuestionType] IN ('Technical', 'Behavioral')");
-
-                            t.HasCheckConstraint("CK_MockAnswers_Score", "[Score] BETWEEN 0 AND 100");
                         });
                 });
 
@@ -420,15 +341,6 @@ namespace InterviewAi.Api.Migrations
                         .IsRequired();
                 });
 
-            modelBuilder.Entity("InterviewAi.Api.Models.MockAnswer", b =>
-                {
-                    b.HasOne("InterviewAi.Api.Models.InterviewReport", null)
-                        .WithMany("MockAnswers")
-                        .HasForeignKey("InterviewReportId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-                });
-
             modelBuilder.Entity("InterviewAi.Api.Models.PreparationDay", b =>
                 {
                     b.HasOne("InterviewAi.Api.Models.InterviewReport", null)
@@ -476,8 +388,6 @@ namespace InterviewAi.Api.Migrations
 
             modelBuilder.Entity("InterviewAi.Api.Models.InterviewReport", b =>
                 {
-                    b.Navigation("MockAnswers");
-
                     b.Navigation("PreparationPlan");
 
                     b.Navigation("Questions");

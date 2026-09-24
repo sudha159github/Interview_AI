@@ -16,6 +16,17 @@
   </button>
 </mat-toolbar>
 
+@if (auth.sessionEnding()) {
+<div class="session-banner" role="alert">
+<mat-icon>schedule</mat-icon>
+<span>Your session is about to end. Save your work, then sign in again.</span>
+<button matButton (click)="signInAgain()">Sign in again</button>
+</div>
+}
+<main id="main" class="app-content">
+<router-outlet />
+</main>
+
 <main class="app-content">
   <router-outlet />
 </main>

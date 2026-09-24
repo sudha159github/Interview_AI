@@ -60,6 +60,7 @@ public class GroqInterviewReportGenerator(
         string jobDescription,
         string? resumeText,
         string? selfDescription,
+        int planDays,
         CancellationToken cancellationToken)
     {
         // 1. Build the request. JSON mode requires the word "JSON" in the prompt,
@@ -69,7 +70,9 @@ public class GroqInterviewReportGenerator(
             Messages:
             [
                 new GroqMessage("system", GeminiPrompts.SystemInstruction + "\n\n" + GroqPrompts.JsonShape),
-                new GroqMessage("user", GeminiPrompts.BuildUserPrompt(jobDescription, resumeText, selfDescription))
+                new GroqMessage(
+                    "user",
+                    GeminiPrompts.BuildUserPrompt(jobDescription, resumeText, selfDescription, planDays))
             ],
             ResponseFormat: new GroqResponseFormat("json_object"));
 
@@ -124,21 +127,39 @@ public class GroqInterviewReportGenerator(
         {
             logger.LogWarning(
                 ex,
-                "Groq returned JSON that doesn't match the expected shape (first 200 characters: {Preview})",
-                json.Length <= 200 ? json : json[..200]);
+                "Groq returned JSON that doesn't match the expected shape (first 300 characters: {Preview})",
+                json.Length <= 300 ? json : json[..300]);
 
             throw new AiGenerationException("The AI service returned an unreadable report.");
         }
 
-        // 5. Make sure no section is missing (detailed checks happen in InterviewReportService)
-        if (result is null ||
-            result.TechnicalQuestions is null ||
-            result.BehavioralQuestions is null ||
-            result.SkillGaps is null ||
-            result.PreparationPlan is null ||
-            result.PreparationPlan.Any(day => day.Tasks is null))
+        // 5. Make sure no section is missing, and say which one when it is
+        var missing = new List<string>();
+
+        if (result is null)
         {
-            throw new AiGenerationException("The AI report is missing required sections.");
+            missing.Add("the whole report");
+        }
+        else
+        {
+            if (string.IsNullOrWhiteSpace(result.Title)) missing.Add("title");
+            if (result.TechnicalQuestions is null) missing.Add("technicalQuestions");
+            if (result.BehavioralQuestions is null) missing.Add("behavioralQuestions");
+            if (result.SkillGaps is null) missing.Add("skillGaps");
+            if (result.PreparationPlan is null) missing.Add("preparationPlan");
+            if (result.PreparationPlan?.Any(day => day.Tasks is null) == true) missing.Add("a day's tasks");
+        }
+
+        if (missing.Count > 0)
+        {
+            logger.LogWarning(
+                "Groq report was missing {Missing} (model {Model}). First 300 characters: {Preview}",
+                string.Join(", ", missing),
+                _options.Model,
+                json.Length <= 300 ? json : json[..300]);
+
+            throw new AiGenerationException(
+                "The AI report is missing required sections: " + string.Join(", ", missing));
         }
 
         // 6. Log timing and usage only — never the prompt or the full output (personal data)
@@ -149,7 +170,7 @@ public class GroqInterviewReportGenerator(
             body?.Usage?.PromptTokens,
             body?.Usage?.CompletionTokens);
 
-        return result;
+        return result!;
     }
 
     /// <summary>Returns the outermost JSON object in the text, ignoring any surrounding prose.</summary>

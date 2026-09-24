@@ -1,9 +1,10 @@
 ﻿namespace InterviewAi.Api.Services;
-
 /// <summary>
-/// Provides the id of the user making the current request.
+/// Provides information about the user making the current request.
 /// </summary>
 public interface ICurrentUser
 {
     Guid UserId { get; }
+    /// <summary>When the current session started, taken from the token's "sst" claim.</summary>
+    DateTimeOffset? SessionStartedAt { get; }
 }

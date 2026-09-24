@@ -14,6 +14,10 @@ public class InterviewReport
 
     public string? SelfDescription { get; set; }
 
+    public string? CompanyName { get; set; }
+    public DateTimeOffset? InterviewDate { get; set; }
+    public ApplicationStatus Status { get; set; } = ApplicationStatus.Planned;
+
     public int MatchScore { get; set; }
 
     public DateTimeOffset CreatedAt { get; set; }
@@ -28,4 +32,6 @@ public class InterviewReport
     public List<SkillGap> SkillGaps { get; set; } = [];
 
     public List<PreparationDay> PreparationPlan { get; set; } = [];
+
+    public List<MockAnswer> MockAnswers { get; set; } = [];
 }
