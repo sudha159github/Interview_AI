@@ -8,20 +8,18 @@ import {
   Validators,
 } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
-import { MatButton } from '@angular/material/button';
-import { MatCardModule } from '@angular/material/card';
-import { MatFormFieldModule } from '@angular/material/form-field';
-import { MatInputModule } from '@angular/material/input';
-import { MatProgressSpinner } from '@angular/material/progress-spinner';
 import { AuthService } from '../../../core/services/auth.service';
 import { getErrorMessage } from '../../../core/utils/api-error';
+
 
 /** Form-level rule: "password" and "confirmPassword" must be the same. */
 const passwordsMatch: ValidatorFn = (group: AbstractControl): ValidationErrors | null => {
   const password = group.get('password')?.value;
   const confirm = group.get('confirmPassword')?.value;
 
-  return password && confirm && password !== confirm ? { passwordsMismatch: true } : null;
+  return password && confirm && password !== confirm
+    ? { passwordsMismatch: true }
+    : null;
 };
 
 @Component({
@@ -29,14 +27,9 @@ const passwordsMatch: ValidatorFn = (group: AbstractControl): ValidationErrors |
   imports: [
     ReactiveFormsModule,
     RouterLink,
-    MatButton,
-    MatCardModule,
-    MatFormFieldModule,
-    MatInputModule,
-    MatProgressSpinner,
   ],
   templateUrl: './register.html',
-  styleUrl: './register.scss',
+  styleUrl: '../login/login.scss',
 })
 export class Register {
   private readonly fb = inject(FormBuilder);
@@ -65,7 +58,6 @@ export class Register {
           Validators.required,
           Validators.minLength(8),
           Validators.maxLength(100),
-          // at least one lowercase letter, one uppercase letter and one digit
           Validators.pattern(/(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/),
         ],
       ],
@@ -83,7 +75,6 @@ export class Register {
     this.loading.set(true);
     this.errorMessage.set(null);
 
-    // Send only what the API expects: confirmPassword stays in the browser
     const { userName, email, password } = this.form.getRawValue();
 
     this.auth.register({ userName, email, password }).subscribe({

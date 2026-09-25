@@ -1,125 +1,193 @@
-
 @use '@angular/material' as mat;
-@use './theme-colors' as theme;
-
+// ---------------------------------------------------------------
+// 1. Design tokens - change colours here, nowhere else
+// ---------------------------------------------------------------
+:root {
+// Surfaces
+--app-bg: #070a12;
+--app-panel: #0f1523;
+--app-panel-2: #131a2b;
+--app-border: #1e2840;
+--app-border-soft: #182136;
+// Text
+--app-text: #e8ecf6;
+--app-text-muted: #94a1bd;
+--app-text-dim: #6b7897;
+// Accents
+--app-accent: #ff4d7e;
+--app-accent-2: #ff8a5b;
+--app-accent-soft: rgba(255, 77, 126, 0.12);
+--app-info: #3d7dff;
+--app-info-soft: rgba(61, 125, 255, 0.12);
+--app-success: #2fd4a0;
+--app-warn: #ffc53d;
+// Shape
+--app-radius: 14px;
+--app-radius-sm: 10px;
+// Bootstrap overrides (Bootstrap reads these)
+--bs-body-bg: var(--app-bg);
+--bs-body-color: var(--app-text);
+--bs-body-font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+--bs-border-color: var(--app-border);
+--bs-link-color: var(--app-accent);
+--bs-link-hover-color: #ff7b9d;
+}
+// Angular Material components (report and practice pages) follow the dark scheme
 html {
-  color-scheme: light dark;
-
-  @include mat.theme((
-  color: (
-    primary: mat.$violet-palette,
-    tertiary: mat.$rose-palette,
-  ),
-  typography: (
-    plain-family: 'Inter, system-ui, sans-serif',
-    brand-family: '"Space Grotesk", Inter, sans-serif',
-    bold-weight: 700,
-    medium-weight: 600,
-    regular-weight: 400,
-  ),
-  density: 0,
+color-scheme: dark;
+@include mat.theme((
+color: (
+primary: mat.$violet-palette,
+tertiary: mat.$rose-palette,
+),
+typography: (
+plain-family: "'Plus Jakarta Sans', system-ui, sans-serif",
+brand-family: "'Plus Jakarta Sans', system-ui, sans-serif",
+bold-weight: 700,
+medium-weight: 600,
+regular-weight: 400,
+),
+density: 0,
 ));
 }
-
-// ---------- Global page styles ----------
+// ---------------------------------------------------------------
+// 2. Page canvas
+// ---------------------------------------------------------------
 html,
 body {
-  height: 100%;
+min-height: 100%;
 }
-
-
 body {
-  margin: 0;
-  font-family: Inter, system-ui, sans-serif;
-  background: var(--mat-sys-surface);
-  color: var(--mat-sys-on-surface);
-  -webkit-font-smoothing: antialiased;   // crisper text on macOS
+margin: 0;
+background-color: var(--app-bg);
+color: var(--app-text);
+font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+-webkit-font-smoothing: antialiased;
+// Two soft glows behind everything, which is what stops a dark page
+// looking flat. They do not move and cost nothing to render.
+background-image:
+radial-gradient(900px 500px at 15% -10%, rgba(255, 77, 126, 0.10), transparent 60%),
+radial-gradient(800px 500px at 90% 0%, rgba(61, 125, 255, 0.10), transparent 55%);
+background-attachment: fixed;
 }
-
-h1, h2, h3 {
-  font-family: 'Space Grotesk', Inter, sans-serif;
-  letter-spacing: -0.02em;               // tighter headings read as more "designed"
+// ---------------------------------------------------------------
+// 3. Shared building blocks
+// ---------------------------------------------------------------
+// A panel is the dark card used for every block of content
+.app-panel {
+background: var(--app-panel);
+border: 1px solid var(--app-border);
+border-radius: var(--app-radius);
 }
-
-
-// ---------- Auth pages (login / register) ----------
-.auth-page {
-  min-height: 100%;
-  display: grid;
-  place-items: center;
-  padding: 24px;
-  box-sizing: border-box;
-  background: linear-gradient(
-    135deg,
-    var(--mat-sys-primary-container) 0%,
-    var(--mat-sys-surface) 60%
-  );
+.app-panel-head {
+display: flex;
+align-items: center;
+justify-content: space-between;
+gap: 12px;
+padding: 18px 20px 12px;
 }
-
-.auth-card {
-  width: 100%;
-  max-width: 420px;
-  padding: 8px;
-
-  form {
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-    margin-top: 16px;
-  }
-
-  button[type='submit'] {
-    height: 48px;
-    margin-top: 8px;
-  }
+.app-panel-title {
+display: inline-flex;
+align-items: center;
+gap: 9px;
+margin: 0;
+font-size: 1.02rem;
+font-weight: 700;
+color: var(--app-text);
+i {
+color: var(--app-accent);
+font-size: 1.05rem;
 }
-
-.form-error {
-  margin-bottom: 8px;
-  padding: 12px 16px;
-  border-radius: 8px;
-  font-size: 14px;
-  background: var(--mat-sys-error-container);
-  color: var(--mat-sys-on-error-container);
 }
-
-.auth-footer {
-  margin: 20px 0 0;
-  text-align: center;
-  color: var(--mat-sys-on-surface-variant);
-
-  a {
-    color: var(--mat-sys-primary);
-    font-weight: 500;
-  }
-// Form-level error shown under a field (e.g. "Passwords don't match")
-.field-error {
-  margin: -12px 0 8px 16px;
-  font-size: 12px;
-  color: var(--mat-sys-error);
+// Small uppercase pills, e.g. REQUIRED / BEST RESULTS
+.app-pill {
+padding: 4px 10px;
+border-radius: 999px;
+font-size: 0.66rem;
+font-weight: 700;
+letter-spacing: 0.06em;
+text-transform: uppercase;
+white-space: nowrap;
 }
-
-:root {
-  --text-xs: 12px;
-  --text-sm: 13px;
-  --text-base: 15px;
-  --text-lg: 18px;
-  --text-xl: 22px;
-  --text-2xl: 28px;
-  --text-3xl: clamp(28px, 4vw, 40px);
-
-  --space-1: 4px;
-  --space-2: 8px;
-  --space-3: 12px;
-  --space-4: 16px;
-  --space-6: 24px;
-  --space-8: 32px;
-  --space-12: 48px;
-
-  --radius-sm: 8px;
-  --radius-md: 12px;
-  --radius-lg: 16px;
-  --radius-pill: 999px;
+.app-pill--accent {
+background: var(--app-accent-soft);
+color: var(--app-accent);
 }
-
+.app-pill--info {
+background: var(--app-info-soft);
+color: #7aa8ff;
+}
+// The gradient call-to-action button
+.btn-gradient {
+border: none;
+border-radius: 999px;
+padding: 12px 26px;
+font-weight: 700;
+color: #fff;
+background: linear-gradient(135deg, var(--app-accent), var(--app-accent-2));
+box-shadow: 0 10px 26px rgba(255, 77, 126, 0.28);
+transition: transform 140ms ease, box-shadow 140ms ease, opacity 140ms ease;
+&:hover:not(:disabled) {
+transform: translateY(-1px);
+box-shadow: 0 14px 32px rgba(255, 77, 126, 0.36);
+color: #fff;
+}
+&:disabled {
+opacity: 0.55;
+box-shadow: none;
+}
+}
+// Form controls, dark version
+.form-control,
+.form-select {
+background-color: var(--app-panel-2);
+border: 1px solid var(--app-border);
+color: var(--app-text);
+border-radius: var(--app-radius-sm);
+padding: 12px 14px;
+&::placeholder {
+color: var(--app-text-dim);
+}
+&:focus {
+background-color: var(--app-panel-2);
+border-color: var(--app-accent);
+box-shadow: 0 0 0 3px var(--app-accent-soft);
+color: var(--app-text);
+}
+&:disabled {
+opacity: 0.6;
+}
+}
+// Text used under inputs
+.app-hint {
+font-size: 0.78rem;
+color: var(--app-text-dim);
+}
+.app-error {
+font-size: 0.82rem;
+color: #ff7b96;
+}
+// A full-width error box
+.app-alert-error {
+border: 1px solid rgba(255, 77, 126, 0.35);
+background: var(--app-accent-soft);
+color: #ffb3c5;
+border-radius: var(--app-radius-sm);
+padding: 12px 14px;
+font-size: 0.88rem;
+}
+// Keyboard focus ring, used everywhere
+:focus-visible {
+outline: 2px solid var(--app-accent);
+outline-offset: 2px;
+border-radius: 6px;
+}
+// Respect a reduced-motion preference
+@media (prefers-reduced-motion: reduce) {
+*,
+*::before,
+*::after {
+animation-duration: 0.01ms !important;
+transition-duration: 0.01ms !important;
+}
 }

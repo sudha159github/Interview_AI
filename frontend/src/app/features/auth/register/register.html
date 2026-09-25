@@ -1,77 +1,154 @@
-<div class="auth-page">
-  <mat-card class="auth-card" appearance="outlined">
-    <mat-card-header>
-      <mat-card-title>Create your account</mat-card-title>
-      <mat-card-subtitle>Start preparing for your next interview</mat-card-subtitle>
-    </mat-card-header>
+<div class="auth-wrap">
+  <div class="auth-card app-panel">
 
-    <mat-card-content>
-      <form [formGroup]="form" (ngSubmit)="submit()" novalidate>
-        <mat-form-field appearance="outline">
-          <mat-label>Username</mat-label>
-          <input matInput formControlName="userName" autocomplete="username" />
-          @if (form.controls.userName.hasError('required')) {
-            <mat-error>Username is required</mat-error>
-          } @else if (form.controls.userName.hasError('minlength')) {
-            <mat-error>At least 3 characters</mat-error>
-          } @else if (form.controls.userName.hasError('maxlength')) {
-            <mat-error>At most 50 characters</mat-error>
-          } @else if (form.controls.userName.hasError('pattern')) {
-            <mat-error>Only letters, numbers, '.', '_' and '-'</mat-error>
-          }
-        </mat-form-field>
+    <div class="text-center mb-4">
+      <span class="brand-mark mx-auto mb-3">
+        <i class="bi bi-stars"></i>
+      </span>
 
-        <mat-form-field appearance="outline">
-          <mat-label>Email</mat-label>
-          <input matInput type="email" formControlName="email" autocomplete="email" />
-          @if (form.controls.email.hasError('required')) {
-            <mat-error>Email is required</mat-error>
-          } @else if (form.controls.email.hasError('email')) {
-            <mat-error>Enter a valid email address</mat-error>
-          }
-        </mat-form-field>
-
-        <mat-form-field appearance="outline">
-          <mat-label>Password</mat-label>
-          <input matInput type="password" formControlName="password" autocomplete="new-password" />
-          <mat-hint>At least 8 characters, with upper and lower case letters and a number</mat-hint>
-          @if (form.controls.password.hasError('required')) {
-            <mat-error>Password is required</mat-error>
-          } @else if (form.controls.password.hasError('minlength')) {
-            <mat-error>At least 8 characters</mat-error>
-          } @else if (form.controls.password.hasError('pattern')) {
-            <mat-error>Needs an uppercase letter, a lowercase letter and a number</mat-error>
-          }
-        </mat-form-field>
-
-        <mat-form-field appearance="outline" class="confirm-field">
-          <mat-label>Confirm password</mat-label>
-          <input matInput type="password" formControlName="confirmPassword" autocomplete="new-password" />
-          @if (form.controls.confirmPassword.hasError('required')) {
-            <mat-error>Please confirm your password</mat-error>
-          }
-        </mat-form-field>
-
-        @if (form.hasError('passwordsMismatch') && form.controls.confirmPassword.touched) {
-          <p class="field-error">Passwords don't match</p>
-        }
-
-        @if (errorMessage(); as message) {
-          <div class="form-error" role="alert">{{ message }}</div>
-        }
-
-        <button matButton="filled" type="submit" [disabled]="loading()">
-          @if (loading()) {
-            <mat-spinner diameter="20" />
-          } @else {
-            Create account
-          }
-        </button>
-      </form>
-
-      <p class="auth-footer">
-        Already have an account? <a routerLink="/login">Log in</a>
+      <h1 class="auth-title">Create your account</h1>
+      <p class="auth-sub">
+        Start preparing for your next interview
       </p>
-    </mat-card-content>
-  </mat-card>
+    </div>
+
+    <form [formGroup]="form" (ngSubmit)="submit()" novalidate>
+
+      <!-- Username -->
+      <label class="app-label" for="userName">Username</label>
+      <input
+        id="userName"
+        class="form-control mb-1"
+        type="text"
+        formControlName="userName"
+        autocomplete="username"
+        placeholder="Your username"
+      />
+
+      @if (form.controls.userName.touched && form.controls.userName.invalid) {
+        @if (form.controls.userName.hasError('required')) {
+          <p class="app-error mb-2">Username is required</p>
+        } @else if (form.controls.userName.hasError('minlength')) {
+          <p class="app-error mb-2">At least 3 characters</p>
+        } @else if (form.controls.userName.hasError('maxlength')) {
+          <p class="app-error mb-2">At most 50 characters</p>
+        } @else if (form.controls.userName.hasError('pattern')) {
+          <p class="app-error mb-2">
+            Only letters, numbers, '.', '_' and '-'
+          </p>
+        }
+      }
+
+
+      <!-- Email -->
+      <label class="app-label mt-3" for="email">Email</label>
+      <input
+        id="email"
+        class="form-control mb-1"
+        type="email"
+        formControlName="email"
+        autocomplete="email"
+        placeholder="you@example.com"
+      />
+
+      @if (form.controls.email.touched && form.controls.email.invalid) {
+        @if (form.controls.email.hasError('required')) {
+          <p class="app-error mb-2">Email is required</p>
+        } @else if (form.controls.email.hasError('email')) {
+          <p class="app-error mb-2">Enter a valid email address</p>
+        }
+      }
+
+
+      <!-- Password -->
+      <label class="app-label mt-3" for="password">Password</label>
+      <input
+        id="password"
+        class="form-control mb-1"
+        type="password"
+        formControlName="password"
+        autocomplete="new-password"
+        placeholder="Your password"
+      />
+
+      <small class="password-hint">
+        At least 8 characters, with upper and lower case letters and a number
+      </small>
+
+      @if (form.controls.password.touched && form.controls.password.invalid) {
+        @if (form.controls.password.hasError('required')) {
+          <p class="app-error mb-2">Password is required</p>
+        } @else if (form.controls.password.hasError('minlength')) {
+          <p class="app-error mb-2">At least 8 characters</p>
+        } @else if (form.controls.password.hasError('pattern')) {
+          <p class="app-error mb-2">
+            Needs an uppercase letter, a lowercase letter and a number
+          </p>
+        }
+      }
+
+
+      <!-- Confirm Password -->
+      <label class="app-label mt-3" for="confirmPassword">
+        Confirm password
+      </label>
+
+      <input
+        id="confirmPassword"
+        class="form-control mb-1"
+        type="password"
+        formControlName="confirmPassword"
+        autocomplete="new-password"
+        placeholder="Confirm your password"
+      />
+
+      @if (
+        form.controls.confirmPassword.touched &&
+        form.controls.confirmPassword.hasError('required')
+      ) {
+        <p class="app-error mb-2">
+          Please confirm your password
+        </p>
+      }
+
+      @if (
+        form.hasError('passwordsMismatch') &&
+        form.controls.confirmPassword.touched
+      ) {
+        <p class="app-error mb-2">
+          Passwords don't match
+        </p>
+      }
+
+
+      <!-- API Error -->
+      @if (errorMessage(); as message) {
+        <div class="app-alert-error mt-3" role="alert">
+          {{ message }}
+        </div>
+      }
+
+
+      <!-- Register Button -->
+      <button
+        type="submit"
+        class="btn btn-gradient w-100 mt-4"
+        [disabled]="loading()"
+      >
+        @if (loading()) {
+          <span class="spinner-border spinner-border-sm me-2"></span>
+          Creating account…
+        } @else {
+          Create account
+        }
+      </button>
+
+    </form>
+
+    <p class="auth-foot">
+      Already have an account?
+      <a routerLink="/login">Log in</a>
+    </p>
+
+  </div>
 </div>

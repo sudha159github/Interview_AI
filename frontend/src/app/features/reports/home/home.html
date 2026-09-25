@@ -1,241 +1,222 @@
-<section class="hero">
-  <h1>Create your <span class="highlight">interview plan</span></h1>
-  <p>
-    Paste a job description, then upload your CV or tell us about yourself. You'll get likely
-    interview questions with model answers, your skill gaps and a day-by-day preparation plan.
-  </p>
+<div class="container-xl py-5">
+<!-- ---------------- hero ---------------- -->
+<header class="text-center mb-5">
+<h1 class="hero-title">
+Create Your Custom <span class="hero-accent">Interview Plan</span>
+</h1>
+<p class="hero-sub">
+Let AI analyse the job requirements and your profile, then build a plan you can practise against.
+</p>
+</header>
+<!-- ---------------- the form ---------------- -->
+<form [formGroup]="form" (ngSubmit)="generate()" novalidate>
+<div class="app-panel form-panel">
+<div class="row g-0">
+<!-- left: job description -->
+<div class="col-lg-6 panel-col">
+<div class="app-panel-head">
+<h2 class="app-panel-title">
+<i class="bi bi-briefcase-fill"></i>Target Job Description
+</h2>
+<span class="app-pill app-pill--accent">Required</span>
+</div>
+<div class="px-4 pb-4">
+<textarea
+class="form-control job-input"
+formControlName="jobDescription"
+rows="12"
+placeholder="Paste the full job description here&#10;e.g. 'Junior .NET Developer at Leapfrog: ASP.NET Core, EF Core,
+SQL Server...'"
+></textarea>
+<div class="d-flex justify-content-between align-items-start mt-2">
+<div>
+@if (form.controls.jobDescription.touched) {
+@if (form.controls.jobDescription.hasError('required')) {
+<span class="app-error">A job description is required</span>
+} @else if (form.controls.jobDescription.hasError('minlength')) {
+<span class="app-error">Please paste at least 50 characters</span>
+}
+}
+</div>
+<span class="app-hint">{{ form.controls.jobDescription.value.length }} / 5000 chars</span>
+</div>
+<div class="row g-2 mt-3">
+<div class="col-sm-6">
+<label class="app-label" for="companyName">Company <span class="app-optional">optional</span></label>
+<input
+id="companyName"
+class="form-control"
+formControlName="companyName"
+placeholder="e.g. Leapfrog Technology"
+/>
+</div>
+<div class="col-sm-6">
+<label class="app-label" for="interviewDate">Interview date <span class="app-optional">optional</span></label>
+<input
+id="interviewDate"
+class="form-control"
+type="date"
+formControlName="interviewDate"
+[min]="todayIso"
+/>
+<span class="app-hint">We size the plan to the days you have left</span>
+</div>
+</div>
+</div>
+</div>
+<!-- right: profile -->
+<div class="col-lg-6 panel-col panel-col--right">
+<div class="app-panel-head">
+<h2 class="app-panel-title">
+<i class="bi bi-person-badge-fill"></i>Your Profile
+</h2>
+</div>
+<div class="px-4 pb-4">
+<div class="d-flex align-items-center gap-2 mb-2">
+<span class="app-sublabel">Upload Resume</span>
+<span class="app-pill app-pill--info">Best results</span>
+</div>
+<!-- hidden real input, triggered by the drop zone -->
+<input
+#fileInput
+type="file"
+class="d-none"
+accept=".pdf,.docx"
+(change)="onFileSelected($event)"
+/>
+@if (resumeFile(); as file) {
+<div class="file-chip">
+<i class="bi bi-file-earmark-text"></i>
+<span class="file-name">{{ file.name }}</span>
+<span class="file-size">{{ formatSize(file.size) }}</span>
+<button
+type="button"
+class="btn-close btn-close-white ms-auto"
+aria-label="Remove file"
+[disabled]="generating()"
+(click)="removeFile()"
+></button>
+</div>
+} @else {
+<button
+type="button"
+class="upload-zone w-100"
+[class.upload-zone--active]="dragging()"
+[disabled]="generating()"
+(click)="fileInput.click()"
+(dragover)="onDragOver($event)"
+(dragleave)="onDragLeave($event)"
+(drop)="onDrop($event)"
+>
+<i class="bi bi-cloud-arrow-up"></i>
+<span class="upload-title">Click to upload or drag &amp; drop</span>
+<span class="upload-sub">PDF or DOCX, max 5 MB</span>
+</button>
+}
+@if (resumeError(); as message) {
+<p class="app-error mt-2 mb-0">{{ message }}</p>
+}
+<div class="divider-or"><span>OR</span></div>
+<span class="app-sublabel d-block mb-2">Quick Self-Description</span>
+<textarea
+class="form-control"
+formControlName="selfDescription"
+rows="5"
+placeholder="Briefly describe your experience, key skills and years of experience if you don't have a CV to hand..."
+></textarea>
+<div class="d-flex justify-content-between align-items-start mt-2">
+<div>
+@if (form.controls.selfDescription.touched && form.controls.selfDescription.hasError('minlength')) {
+<span class="app-error">Please write at least 20 characters</span>
+}
+</div>
+<span class="app-hint">{{ form.controls.selfDescription.value.length }} / 3000</span>
+</div>
+<div class="info-note mt-3">
+<i class="bi bi-info-circle-fill"></i>
+<span>
+Either a <strong>resume</strong> or a <strong>self-description</strong> is required
+to generate a personalised plan.
+</span>
+</div>
+@if (missingProfile() && form.controls.selfDescription.touched) {
+<p class="app-error mt-2 mb-0">Please upload your CV or fill in the description.</p>
+}
+</div>
+</div>
+</div>
+<!-- footer of the panel -->
+<div class="form-footer">
+<span class="app-hint">
+<i class="bi bi-cpu me-1"></i>AI-powered plan generation, usually under a minute
+</span>
+<button type="submit" class="btn btn-gradient" [disabled]="generating()">
+@if (generating()) {
+<span class="spinner-border spinner-border-sm me-2"></span>Generating…
+} @else {
+<i class="bi bi-stars me-2"></i>Generate My Interview Plan
+}
+</button>
+</div>
+</div>
+@if (errorMessage(); as message) {
+<div class="app-alert-error mt-3" role="alert">{{ message }}</div>
+}
+</form>
+<!-- ---------------- recent plans ---------------- -->
+<section class="mt-5">
+<h2 class="section-title">My Recent Interview Plans</h2>
+@if (loadingReports()) {
+<div class="row g-3">
+@for (placeholder of [1, 2, 3]; track placeholder) {
+<div class="col-md-6 col-lg-4">
+<div class="plan-card plan-card--skeleton"></div>
+</div>
+}
+</div>
+} @else if (reportsError(); as message) {
+<div class="app-alert-error" role="alert">{{ message }}</div>
+} @else if (myReports().length === 0) {
+<div class="empty-state">
+<i class="bi bi-clipboard-plus"></i>
+<h3>No plans yet</h3>
+<p>Paste a job description above and upload your CV to create your first plan.</p>
+</div>
+} @else {
+<div class="row g-3">
+@for (report of myReports(); track report.id) {
+<div class="col-md-6 col-lg-4">
+<a class="plan-card" [routerLink]="['/reports', report.id]">
+<h3 class="plan-title">{{ report.title }}</h3>
+<p class="plan-meta">
+@if (report.companyName) {
+{{ report.companyName }} ·
+}
+{{ report.createdAt | date: 'mediumDate' }}
+</p>
+<div class="plan-footer">
+<span class="match-score">Match score: {{ report.matchScore }}%</span>
+<span class="status-chip" [attr.data-status]="report.status">{{ report.status }}</span>
+</div>
+@if (report.interviewDate) {
+<span class="plan-countdown">
+<i class="bi bi-calendar-event me-1"></i>
+@if (report.daysUntilInterview !== null && report.daysUntilInterview >= 0) {
+{{ report.daysUntilInterview === 0 ? 'Interview today' : 'In ' + report.daysUntilInterview + ' days' }}
+} @else {
+Interview passed
+}
+</span>
+}
+</a>
+</div>
+}
+</div>
+}
 </section>
-
-<mat-card appearance="outlined" class="generate-card">
-  <mat-card-content>
-    <form [formGroup]="form" (ngSubmit)="generate()" novalidate>
-      <div class="fields">
-        <mat-form-field appearance="outline">
-          <mat-label>Target job description</mat-label>
-
-          <textarea
-            matInput
-            formControlName="jobDescription"
-            rows="12"
-            placeholder="Paste the full job description here..."
-          ></textarea>
-
-          <mat-hint align="end">
-            {{ form.controls.jobDescription.value.length }} / 5000
-          </mat-hint>
-
-          @if (form.controls.jobDescription.hasError('required')) {
-            <mat-error>A job description is required</mat-error>
-          } @else if (form.controls.jobDescription.hasError('minlength')) {
-            <mat-error>Please paste at least 50 characters</mat-error>
-          } @else if (form.controls.jobDescription.hasError('maxlength')) {
-            <mat-error>At most 5000 characters</mat-error>
-          }
-        </mat-form-field>
-
-        <mat-form-field appearance="outline">
-          <mat-label>About you (optional if you upload a CV)</mat-label>
-
-          <textarea
-            matInput
-            formControlName="selfDescription"
-            rows="12"
-            placeholder="Your experience, key skills, projects and years of experience..."
-          ></textarea>
-
-          <mat-hint align="end">
-            {{ form.controls.selfDescription.value.length }} / 3000
-          </mat-hint>
-
-          @if (form.controls.selfDescription.hasError('minlength')) {
-            <mat-error>Please write at least 20 characters</mat-error>
-          } @else if (form.controls.selfDescription.hasError('maxlength')) {
-            <mat-error>At most 3000 characters</mat-error>
-          }
-        </mat-form-field>
-      </div>
-
-      <!-- Application tracking -->
-      <div class="tracking-row">
-        <mat-form-field appearance="outline">
-          <mat-label>Company (optional)</mat-label>
-
-          <input
-            matInput
-            formControlName="companyName"
-            placeholder="e.g. Leapfrog Technology"
-          />
-        </mat-form-field>
-
-        <mat-form-field appearance="outline">
-          <mat-label>Interview date (optional)</mat-label>
-
-          <input
-            matInput
-            [matDatepicker]="picker"
-            formControlName="interviewDate"
-            [min]="today"
-          />
-
-          <mat-datepicker-toggle
-            matIconSuffix
-            [for]="picker"
-          ></mat-datepicker-toggle>
-
-          <mat-datepicker #picker></mat-datepicker>
-
-          <mat-hint>
-            We size the plan to the days you have left
-          </mat-hint>
-        </mat-form-field>
-      </div>
-
-      <!-- Resume upload -->
-      <div class="resume-row">
-        <input
-          #fileInput
-          type="file"
-          accept=".pdf,.docx"
-          hidden
-          (change)="onFileSelected($event)"
-        />
-
-        @if (resumeFile(); as file) {
-          <div class="file-chip">
-            <mat-icon>description</mat-icon>
-
-            <span class="file-name">
-              {{ file.name }}
-            </span>
-
-            <span class="file-size">
-              {{ formatSize(file.size) }}
-            </span>
-
-            <button
-              matIconButton
-              type="button"
-              aria-label="Remove file"
-              [disabled]="generating()"
-              (click)="removeFile()"
-            >
-              <mat-icon>close</mat-icon>
-            </button>
-          </div>
-        } @else {
-          <button
-            matButton="outlined"
-            type="button"
-            [disabled]="generating()"
-            (click)="fileInput.click()"
-          >
-            <mat-icon>upload_file</mat-icon>
-            Upload your CV (PDF or DOCX)
-          </button>
-
-          <span class="note">
-            Optional · max 5 MB · we never share your CV
-          </span>
-        }
-      </div>
-
-      @if (resumeError(); as message) {
-        <p class="field-error" role="alert">
-          {{ message }}
-        </p>
-      }
-
-      @if (missingProfile() && form.controls.selfDescription.touched) {
-        <p class="field-error" role="alert">
-          Please upload your CV or fill in "About you".
-        </p>
-      }
-
-      @if (errorMessage(); as message) {
-        <div class="form-error" role="alert">
-          {{ message }}
-        </div>
-      }
-
-      <div class="actions">
-        <span class="note">
-          AI-generated · usually takes under a minute
-        </span>
-
-        <button
-          matButton="filled"
-          type="submit"
-          [disabled]="generating()"
-        >
-          @if (generating()) {
-            <span class="busy">
-              <mat-spinner diameter="18" />
-              Generating your plan…
-            </span>
-          } @else {
-            Generate my interview plan
-          }
-        </button>
-      </div>
-    </form>
-  </mat-card-content>
-</mat-card>
-
-<section class="recent">
-  <h2>My interview plans</h2>
-
-  @if (loadingReports()) {
-    <mat-spinner diameter="32" />
-
-  } @else if (reportsError(); as message) {
-    <div class="form-error" role="alert">
-      {{ message }}
-    </div>
-
-  } @else if (myReports().length === 0) {
-    <p class="empty">
-      No plans yet. Generate your first one above.
-    </p>
-
-  } @else {
-    <div class="report-grid">
-      @for (report of myReports(); track report.id) {
-        <a
-          class="report-item"
-          [routerLink]="['/reports', report.id]"
-        >
-          <div class="report-text">
-            <h3>{{ report.title }}</h3>
-
-            <p>
-              @if (report.companyName) {
-                {{ report.companyName }} -
-              }
-
-              {{ report.createdAt | date: 'mediumDate' }}
-            </p>
-
-            <div class="report-meta">
-              <span
-                class="status-chip"
-                [attr.data-status]="report.status"
-              >
-                {{ report.status }}
-              </span>
-
-              @if (report.interviewDate) {
-                <app-countdown
-                  [days]="report.daysUntilInterview"
-                />
-              }
-            </div>
-          </div>
-
-          <app-score-badge
-            [score]="report.matchScore"
-          />
-        </a>
-      }
-    </div>
-  }
-</section>
+<footer class="app-footer">
+<span>Privacy Policy</span>
+<span>Terms of Service</span>
+<span>Help Centre</span>
+</footer>
+</div>
