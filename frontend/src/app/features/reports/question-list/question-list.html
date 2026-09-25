@@ -1,26 +1,32 @@
 @if (questions().length === 0) {
-  <p class="empty">No questions in this section.</p>
+<p class="empty-note">No questions in this section.</p>
 } @else {
-  <mat-accordion multi>
-    @for (item of questions(); track $index) {
-      <mat-expansion-panel>
-        <mat-expansion-panel-header collapsedHeight="auto" expandedHeight="auto">
-          <mat-panel-title class="question-title">
-            <span class="number">Q{{ $index + 1 }}</span>
-            <span>{{ item.question }}</span>
-          </mat-panel-title>
-        </mat-expansion-panel-header>
-
-        <div class="section">
-          <h4>Why they ask</h4>
-          <p>{{ item.intention }}</p>
-        </div>
-
-        <div class="section">
-          <h4>How to answer</h4>
-          <p>{{ item.suggestedAnswer }}</p>
-        </div>
-      </mat-expansion-panel>
-    }
-  </mat-accordion>
+<div class="q-list">
+@for (item of questions(); track $index) {
+<div class="q-item" [class.q-item--open]="openIndex() === $index">
+<button
+type="button"
+class="q-head"
+[attr.aria-expanded]="openIndex() === $index"
+(click)="toggle($index)"
+>
+<span class="q-number">Q{{ $index + 1 }}</span>
+<span class="q-text">{{ item.question }}</span>
+<i class="bi bi-chevron-down q-chevron"></i>
+</button>
+@if (openIndex() === $index) {
+<div class="q-body">
+<div class="q-section">
+<h4>Why they ask</h4>
+<p>{{ item.intention }}</p>
+</div>
+<div class="q-section">
+<h4>How to answer</h4>
+<p>{{ item.suggestedAnswer }}</p>
+</div>
+</div>
+}
+</div>
+}
+</div>
 }

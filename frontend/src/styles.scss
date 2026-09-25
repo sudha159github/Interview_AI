@@ -1,193 +1,208 @@
-@use '@angular/material' as mat;
 // ---------------------------------------------------------------
 // 1. Design tokens - change colours here, nowhere else
 // ---------------------------------------------------------------
 :root {
-// Surfaces
---app-bg: #070a12;
---app-panel: #0f1523;
---app-panel-2: #131a2b;
---app-border: #1e2840;
---app-border-soft: #182136;
-// Text
---app-text: #e8ecf6;
---app-text-muted: #94a1bd;
---app-text-dim: #6b7897;
-// Accents
---app-accent: #ff4d7e;
---app-accent-2: #ff8a5b;
---app-accent-soft: rgba(255, 77, 126, 0.12);
---app-info: #3d7dff;
---app-info-soft: rgba(61, 125, 255, 0.12);
---app-success: #2fd4a0;
---app-warn: #ffc53d;
-// Shape
---app-radius: 14px;
---app-radius-sm: 10px;
-// Bootstrap overrides (Bootstrap reads these)
---bs-body-bg: var(--app-bg);
---bs-body-color: var(--app-text);
---bs-body-font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
---bs-border-color: var(--app-border);
---bs-link-color: var(--app-accent);
---bs-link-hover-color: #ff7b9d;
+  // Surfaces
+  --app-bg: #070a12;
+  --app-panel: #0f1523;
+  --app-panel-2: #131a2b;
+  --app-border: #1e2840;
+  --app-border-soft: #182136;
+
+  // Text
+  --app-text: #e8ecf6;
+  --app-text-muted: #94a1bd;
+  --app-text-dim: #6b7897;
+
+  // Accents
+  --app-accent: #ff4d7e;
+  --app-accent-2: #ff8a5b;
+  --app-accent-soft: rgba(255, 77, 126, 0.12);
+  --app-info: #3d7dff;
+  --app-info-soft: rgba(61, 125, 255, 0.12);
+  --app-success: #2fd4a0;
+  --app-warn: #ffc53d;
+
+  // Shape
+  --app-radius: 14px;
+  --app-radius-sm: 10px;
+
+  // Bootstrap overrides (Bootstrap reads these)
+  --bs-body-bg: var(--app-bg);
+  --bs-body-color: var(--app-text);
+  --bs-body-font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+  --bs-border-color: var(--app-border);
+  --bs-link-color: var(--app-accent);
+  --bs-link-hover-color: #ff7b9d;
 }
-// Angular Material components (report and practice pages) follow the dark scheme
+
+// ---------------------------------------------------------------
+// 2. Global scale - the one dial that resizes the whole app
+// ---------------------------------------------------------------
 html {
-color-scheme: dark;
-@include mat.theme((
-color: (
-primary: mat.$violet-palette,
-tertiary: mat.$rose-palette,
-),
-typography: (
-plain-family: "'Plus Jakarta Sans', system-ui, sans-serif",
-brand-family: "'Plus Jakarta Sans', system-ui, sans-serif",
-bold-weight: 700,
-medium-weight: 600,
-regular-weight: 400,
-),
-density: 0,
-));
+  // Bootstrap sizes nearly everything in rem, which is a multiple of this.
+  // Lower it to shrink the whole interface, raise it to enlarge.
+  font-size: 16px;
+  color-scheme: dark;
+
+  @media (min-width: 1800px) {
+    font-size: 17px;
+  }
 }
-// ---------------------------------------------------------------
-// 2. Page canvas
-// ---------------------------------------------------------------
+
 html,
 body {
-min-height: 100%;
+  min-height: 100%;
+  margin: 0;
+  padding: 0;
 }
+
 body {
-margin: 0;
-background-color: var(--app-bg);
-color: var(--app-text);
-font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
--webkit-font-smoothing: antialiased;
-// Two soft glows behind everything, which is what stops a dark page
-// looking flat. They do not move and cost nothing to render.
-background-image:
-radial-gradient(900px 500px at 15% -10%, rgba(255, 77, 126, 0.10), transparent 60%),
-radial-gradient(800px 500px at 90% 0%, rgba(61, 125, 255, 0.10), transparent 55%);
-background-attachment: fixed;
+  background-color: var(--app-bg);
+  color: var(--app-text);
+  font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+
+  // Two soft glows behind everything, so the dark page is not flat
+  background-image:
+    radial-gradient(900px 500px at 15% -10%, rgba(255, 77, 126, 0.10), transparent 60%),
+    radial-gradient(800px 500px at 90% 0%, rgba(61, 125, 255, 0.10), transparent 55%);
+  background-attachment: fixed;
 }
+
 // ---------------------------------------------------------------
 // 3. Shared building blocks
 // ---------------------------------------------------------------
-// A panel is the dark card used for every block of content
 .app-panel {
-background: var(--app-panel);
-border: 1px solid var(--app-border);
-border-radius: var(--app-radius);
+  background: var(--app-panel);
+  border: 1px solid var(--app-border);
+  border-radius: var(--app-radius);
 }
+
 .app-panel-head {
-display: flex;
-align-items: center;
-justify-content: space-between;
-gap: 12px;
-padding: 18px 20px 12px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 18px 20px 12px;
 }
+
 .app-panel-title {
-display: inline-flex;
-align-items: center;
-gap: 9px;
-margin: 0;
-font-size: 1.02rem;
-font-weight: 700;
-color: var(--app-text);
-i {
-color: var(--app-accent);
-font-size: 1.05rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--app-text);
+
+  i {
+    color: var(--app-accent);
+    font-size: 1.02rem;
+  }
 }
-}
+
 // Small uppercase pills, e.g. REQUIRED / BEST RESULTS
 .app-pill {
-padding: 4px 10px;
-border-radius: 999px;
-font-size: 0.66rem;
-font-weight: 700;
-letter-spacing: 0.06em;
-text-transform: uppercase;
-white-space: nowrap;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 0.66rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  white-space: nowrap;
 }
+
 .app-pill--accent {
-background: var(--app-accent-soft);
-color: var(--app-accent);
+  background: var(--app-accent-soft);
+  color: var(--app-accent);
 }
+
 .app-pill--info {
-background: var(--app-info-soft);
-color: #7aa8ff;
+  background: var(--app-info-soft);
+  color: #7aa8ff;
 }
+
 // The gradient call-to-action button
 .btn-gradient {
-border: none;
-border-radius: 999px;
-padding: 12px 26px;
-font-weight: 700;
-color: #fff;
-background: linear-gradient(135deg, var(--app-accent), var(--app-accent-2));
-box-shadow: 0 10px 26px rgba(255, 77, 126, 0.28);
-transition: transform 140ms ease, box-shadow 140ms ease, opacity 140ms ease;
-&:hover:not(:disabled) {
-transform: translateY(-1px);
-box-shadow: 0 14px 32px rgba(255, 77, 126, 0.36);
-color: #fff;
+  border: none;
+  border-radius: 999px;
+  padding: 11px 24px;
+  font-weight: 700;
+  color: #fff;
+  background: linear-gradient(135deg, var(--app-accent), var(--app-accent-2));
+  box-shadow: 0 10px 26px rgba(255, 77, 126, 0.28);
+  transition: transform 140ms ease, box-shadow 140ms ease, opacity 140ms ease;
+
+  &:hover:not(:disabled) {
+    transform: translateY(-1px);
+    box-shadow: 0 14px 32px rgba(255, 77, 126, 0.36);
+    color: #fff;
+  }
+
+  &:disabled {
+    opacity: 0.55;
+    box-shadow: none;
+  }
 }
-&:disabled {
-opacity: 0.55;
-box-shadow: none;
-}
-}
+
 // Form controls, dark version
 .form-control,
 .form-select {
-background-color: var(--app-panel-2);
-border: 1px solid var(--app-border);
-color: var(--app-text);
-border-radius: var(--app-radius-sm);
-padding: 12px 14px;
-&::placeholder {
-color: var(--app-text-dim);
+  background-color: var(--app-panel-2);
+  border: 1px solid var(--app-border);
+  color: var(--app-text);
+  border-radius: var(--app-radius-sm);
+  padding: 11px 14px;
+  font-size: 0.95rem;
+
+  &::placeholder {
+    color: var(--app-text-dim);
+  }
+
+  &:focus {
+    background-color: var(--app-panel-2);
+    border-color: var(--app-accent);
+    box-shadow: 0 0 0 3px var(--app-accent-soft);
+    color: var(--app-text);
+  }
+
+  &:disabled {
+    opacity: 0.6;
+  }
 }
-&:focus {
-background-color: var(--app-panel-2);
-border-color: var(--app-accent);
-box-shadow: 0 0 0 3px var(--app-accent-soft);
-color: var(--app-text);
-}
-&:disabled {
-opacity: 0.6;
-}
-}
-// Text used under inputs
+
 .app-hint {
-font-size: 0.78rem;
-color: var(--app-text-dim);
+  font-size: 0.78rem;
+  color: var(--app-text-dim);
 }
+
 .app-error {
-font-size: 0.82rem;
-color: #ff7b96;
+  font-size: 0.82rem;
+  color: #ff7b96;
 }
-// A full-width error box
+
 .app-alert-error {
-border: 1px solid rgba(255, 77, 126, 0.35);
-background: var(--app-accent-soft);
-color: #ffb3c5;
-border-radius: var(--app-radius-sm);
-padding: 12px 14px;
-font-size: 0.88rem;
+  border: 1px solid rgba(255, 77, 126, 0.35);
+  background: var(--app-accent-soft);
+  color: #ffb3c5;
+  border-radius: var(--app-radius-sm);
+  padding: 12px 14px;
+  font-size: 0.88rem;
 }
-// Keyboard focus ring, used everywhere
+
+// Keyboard focus ring
 :focus-visible {
-outline: 2px solid var(--app-accent);
-outline-offset: 2px;
-border-radius: 6px;
+  outline: 2px solid var(--app-accent);
+  outline-offset: 2px;
+  border-radius: 6px;
 }
-// Respect a reduced-motion preference
+
 @media (prefers-reduced-motion: reduce) {
-*,
-*::before,
-*::after {
-animation-duration: 0.01ms !important;
-transition-duration: 0.01ms !important;
-}
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
 }

@@ -1,126 +1,133 @@
-<a matButton routerLink="/" class="back">
-  <mat-icon>arrow_back</mat-icon>
-  My plans
+<a routerLink="/" class="back-link">
+<i class="bi bi-arrow-left me-1"></i>My plans
 </a>
-
 @if (loading()) {
-  <div class="center">
-    <mat-spinner />
-  </div>
+<div class="text-center py-5">
+<span class="spinner-border text-light"></span>
+</div>
 } @else if (errorMessage(); as message) {
-  <div class="form-error" role="alert">
-    {{ message }}
-  </div>
+<div class="app-alert-error" role="alert">{{ message }}</div>
 } @else if (report(); as r) {
-  <header class="report-header">
-    <div>
-      <h1>{{ r.title }}</h1>
-
-      <p class="meta">
-        @if (r.companyName) {
-          {{ r.companyName }} -
-        }
-
-        Generated {{ r.createdAt | date: 'medium' }}
-      </p>
-
-      <div class="tracking">
-        <mat-form-field
-          appearance="outline"
-          subscriptSizing="dynamic"
-          class="status-field"
-        >
-          <mat-label>Status</mat-label>
-
-          <mat-select
-            [value]="r.status"
-            [disabled]="savingStatus()"
-            (valueChange)="changeStatus($event)"
-          >
-            @for (status of statuses; track status) {
-              <mat-option [value]="status">
-                {{ status }}
-              </mat-option>
-            }
-          </mat-select>
-        </mat-form-field>
-
-        @if (r.interviewDate) {
-          <span class="interview-date">
-            <mat-icon>event</mat-icon>
-            {{ r.interviewDate | date: 'fullDate' }}
-          </span>
-
-          <app-countdown [days]="r.daysUntilInterview" />
-        }
-      </div>
-    </div>
-
-    <div class="score-box">
-      <span class="score-label">Match score</span>
-      <app-score-badge
-        [score]="r.matchScore"
-        size="large"
-      />
-    </div>
-  </header>
-
-  <section class="gaps">
-    <h2>Skill gaps</h2>
-
-    @if (r.skillGaps.length === 0) {
-      <p class="empty">No significant skill gaps found. 🎉</p>
-    } @else {
-      <div class="gap-list">
-        @for (gap of r.skillGaps; track gap.skill) {
-          <span
-            class="gap"
-            [attr.data-severity]="gap.severity"
-          >
-            {{ gap.skill }}
-            <small>{{ gap.severity }}</small>
-          </span>
-        }
-      </div>
-    }
-  </section>
-
-  <mat-tab-group
-    animationDuration="150ms"
-    class="tabs"
-  >
-    <mat-tab [label]="'Technical (' + r.technicalQuestions.length + ')'">
-      <app-question-list
-        [questions]="r.technicalQuestions"
-      />
-    </mat-tab>
-
-    <mat-tab [label]="'Behavioral (' + r.behavioralQuestions.length + ')'">
-      <app-question-list
-        [questions]="r.behavioralQuestions"
-      />
-    </mat-tab>
-
-    <mat-tab [label]="'Preparation plan (' + r.preparationPlan.length + ' days)'">
-      <div class="plan">
-        @for (day of r.preparationPlan; track day.dayNumber) {
-          <div class="day">
-            <span class="day-badge">
-              Day {{ day.dayNumber }}
-            </span>
-
-            <div>
-              <h3>{{ day.focus }}</h3>
-
-              <ul>
-                @for (task of day.tasks; track $index) {
-                  <li>{{ task }}</li>
-                }
-              </ul>
-            </div>
-          </div>
-        }
-      </div>
-    </mat-tab>
-  </mat-tab-group>
+<!-- ---------------- header ---------------- -->
+<header class="app-panel report-head">
+<div class="d-flex flex-wrap align-items-start justify-content-between gap-4">
+<div class="flex-grow-1">
+<h1 class="report-title">{{ r.title }}</h1>
+<p class="report-meta">
+@if (r.companyName) {
+<i class="bi bi-building me-1"></i>{{ r.companyName }} ·
+}
+Generated {{ r.createdAt | date: 'mediumDate' }}
+</p>
+<div class="d-flex flex-wrap align-items-center gap-2 mt-3">
+<select
+class="form-select status-select"
+[value]="r.status"
+[disabled]="savingStatus()"
+(change)="onStatusChange($event)"
+aria-label="Application status"
+>
+@for (status of statuses; track status) {
+<option [value]="status">{{ status }}</option>
+}
+</select>
+@if (r.interviewDate) {
+<span class="meta-chip">
+<i class="bi bi-calendar-event me-1"></i>{{ r.interviewDate | date: 'mediumDate' }}
+</span>
+<span
+class="meta-chip"
+[class.meta-chip--urgent]="r.daysUntilInterview !== null && r.daysUntilInterview >= 0 && r.daysUntilInterview <= 2"
+>
+{{ countdown(r.daysUntilInterview) }}
+</span>
+}
+<a [routerLink]="['/reports', r.id, 'practice']" class="btn btn-gradient btn-sm ms-auto">
+<i class="bi bi-mic-fill me-1"></i>Practise
+</a>
+</div>
+</div>
+<div class="score-box">
+<span class="score-label">Match score</span>
+<span class="score-value" [attr.data-level]="scoreLevel(r.matchScore)">{{ r.matchScore }}%</span>
+</div>
+</div>
+</header>
+<!-- ---------------- skill gaps ---------------- -->
+<section class="mt-4">
+<h2 class="section-title">Skill gaps</h2>
+@if (r.skillGaps.length === 0) {
+<p class="text-muted-soft mb-0">No significant skill gaps found.</p>
+} @else {
+<div class="d-flex flex-wrap gap-2">
+@for (gap of r.skillGaps; track gap.skill) {
+<span class="gap-chip" [attr.data-severity]="gap.severity">
+{{ gap.skill }}<small>{{ gap.severity }}</small>
+</span>
+}
+</div>
+}
+</section>
+<!-- ---------------- tabs ---------------- -->
+<section class="mt-4">
+<div class="tab-strip" role="tablist">
+<button
+type="button"
+class="tab-btn"
+role="tab"
+[class.active]="activeTab() === 'technical'"
+[attr.aria-selected]="activeTab() === 'technical'"
+(click)="showTab('technical')"
+>
+Technical <span class="tab-count">{{ r.technicalQuestions.length }}</span>
+</button>
+<button
+type="button"
+class="tab-btn"
+role="tab"
+[class.active]="activeTab() === 'behavioral'"
+[attr.aria-selected]="activeTab() === 'behavioral'"
+(click)="showTab('behavioral')"
+>
+Behavioural <span class="tab-count">{{ r.behavioralQuestions.length }}</span>
+</button>
+<button
+type="button"
+class="tab-btn"
+role="tab"
+[class.active]="activeTab() === 'plan'"
+[attr.aria-selected]="activeTab() === 'plan'"
+(click)="showTab('plan')"
+>
+Preparation plan <span class="tab-count">{{ r.preparationPlan.length }}</span>
+</button>
+</div>
+<div class="tab-body">
+@switch (activeTab()) {
+@case ('technical') {
+<app-question-list [questions]="r.technicalQuestions" />
+}
+@case ('behavioral') {
+<app-question-list [questions]="r.behavioralQuestions" />
+}
+@case ('plan') {
+<div class="plan-list">
+@for (day of r.preparationPlan; track day.dayNumber) {
+<div class="day-row">
+<span class="day-badge">Day {{ day.dayNumber }}</span>
+<div>
+<h3 class="day-focus">{{ day.focus }}</h3>
+<ul class="day-tasks">
+@for (task of day.tasks; track $index) {
+<li>{{ task }}</li>
+}
+</ul>
+</div>
+</div>
+}
+</div>
+}
+}
+</div>
+</section>
 }

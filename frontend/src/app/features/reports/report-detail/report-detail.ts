@@ -1,14 +1,7 @@
 import { Component, OnInit, inject, signal } from '@angular/core';
 import { DatePipe } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
-import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, RouterLink } from '@angular/router';
-import { MatAnchor, MatButton } from '@angular/material/button';
-import { MatFormFieldModule } from '@angular/material/form-field';
-import { MatIcon } from '@angular/material/icon';
-import { MatProgressSpinner } from '@angular/material/progress-spinner';
-import { MatSelectModule } from '@angular/material/select';
-import { MatTabsModule } from '@angular/material/tabs';
 import {
 APPLICATION_STATUSES,
 ApplicationStatus,
@@ -16,26 +9,12 @@ InterviewReport,
 } from '../../../core/models/report.models';
 import { ReportsService } from '../../../core/services/reports.service';
 import { getErrorMessage } from '../../../core/utils/api-error';
-import { Countdown } from '../../../shared/countdown/countdown';
-import { ScoreBadge } from '../../../shared/score-badge/score-badge';
 import { QuestionList } from '../question-list/question-list';
+/** Which section of the report is on screen. */
+type ReportTab = 'technical' | 'behavioral' | 'plan';
 @Component({
 selector: 'app-report-detail',
-imports: [
-DatePipe,
-FormsModule,
-RouterLink,
-MatAnchor,
-MatButton,
-MatFormFieldModule,
-MatIcon,
-MatProgressSpinner,
-MatSelectModule,
-MatTabsModule,
-Countdown,
-ScoreBadge,
-QuestionList,
-],
+imports: [DatePipe, RouterLink, QuestionList],
 templateUrl: './report-detail.html',
 styleUrl: './report-detail.scss',
 })
@@ -47,6 +26,7 @@ protected readonly loading = signal(true);
 protected readonly errorMessage = signal<string | null>(null);
 protected readonly savingStatus = signal(false);
 protected readonly statuses = APPLICATION_STATUSES;
+protected readonly activeTab = signal<ReportTab>('technical');
 ngOnInit(): void {
 const id = this.route.snapshot.paramMap.get('id');
 if (!id) {
@@ -69,7 +49,28 @@ this.loading.set(false);
 },
 });
 }
-protected changeStatus(status: ApplicationStatus): void {
+protected showTab(tab: ReportTab): void {
+this.activeTab.set(tab);
+}
+/** Colour band for the match score: high, mid or low. */
+protected scoreLevel(score: number): 'high' | 'mid' | 'low' {
+return score >= 80 ? 'high' : score >= 60 ? 'mid' : 'low';
+}
+/** Human countdown text for the interview date. */
+protected countdown(days: number | null): string {
+if (days === null) {
+return '';
+}
+if (days < 0) {
+return 'Interview passed';
+}
+return days === 0 ? 'Interview today' : days === 1 ? 'Tomorrow' : `In ${days} days`;
+}
+protected onStatusChange(event: Event): void {
+const value = (event.target as HTMLSelectElement).value as ApplicationStatus;
+this.changeStatus(value);
+}
+private changeStatus(status: ApplicationStatus): void {
 const current = this.report();
 if (!current || status === current.status) {
 return;

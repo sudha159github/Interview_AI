@@ -1,19 +1,11 @@
 import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, RouterLink } from '@angular/router';
-import { MatAnchor, MatButton } from '@angular/material/button';
-import { MatCardModule } from '@angular/material/card';
-import { MatFormFieldModule } from '@angular/material/form-field';
-import { MatIcon } from '@angular/material/icon';
-import { MatInputModule } from '@angular/material/input';
-import { MatProgressBar } from '@angular/material/progress-bar';
-import { MatProgressSpinner } from '@angular/material/progress-spinner';
 import { InterviewQuestion, InterviewReport } from '../../../core/models/report.models';
 import { MockAnswer } from '../../../core/models/mock-interview.models';
 import { MockInterviewService } from '../../../core/services/mock-interview.service';
 import { ReportsService } from '../../../core/services/reports.service';
 import { getErrorMessage } from '../../../core/utils/api-error';
-import { ScoreBadge } from '../../../shared/score-badge/score-badge';
 /** One question in the practice run, with its type and position. */
 interface PracticeQuestion extends InterviewQuestion {
 type: 'Technical' | 'Behavioral';
@@ -21,19 +13,7 @@ order: number;
 }
 @Component({
 selector: 'app-practice',
-imports: [
-FormsModule,
-RouterLink,
-MatAnchor,
-MatButton,
-MatCardModule,
-MatFormFieldModule,
-MatIcon,
-MatInputModule,
-MatProgressBar,
-MatProgressSpinner,
-ScoreBadge,
-],
+imports: [FormsModule, RouterLink],
 templateUrl: './practice.html',
 styleUrl: './practice.scss',
 })
@@ -51,6 +31,7 @@ protected readonly answerText = signal('');
 protected readonly scoring = signal(false);
 protected readonly feedback = signal<MockAnswer | null>(null);
 protected readonly finished = signal(false);
+protected readonly showModelAnswer = signal(false);
 /** Scores collected during this run, used for the summary. */
 protected readonly scores = signal<number[]>([]);
 protected readonly current = computed(() => this.questions()[this.index()] ?? null);
@@ -86,6 +67,9 @@ this.loading.set(false);
 },
 });
 }
+protected scoreLevel(score: number): 'high' | 'mid' | 'low' {
+return score >= 80 ? 'high' : score >= 60 ? 'mid' : 'low';
+}
 protected submit(): void {
 const question = this.current();
 const answer = this.answerText().trim();
@@ -115,6 +99,7 @@ this.scoring.set(false);
 protected next(): void {
 this.feedback.set(null);
 this.answerText.set('');
+this.showModelAnswer.set(false);
 if (this.index() + 1 >= this.total()) {
 this.finished.set(true);
 return;
@@ -126,6 +111,7 @@ this.index.set(0);
 this.answerText.set('');
 this.feedback.set(null);
 this.finished.set(false);
+this.showModelAnswer.set(false);
 this.scores.set([]);
 }
 }

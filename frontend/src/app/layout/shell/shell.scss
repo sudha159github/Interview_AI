@@ -49,7 +49,11 @@ color: #ffc2d1;
 padding: 10px 0;
 font-size: 0.9rem;
 }
+// The content area: centred, with a maximum width and breathing room.
+// The home page adds its own container inside, which is harmless.
 .app-content {
 display: block;
-padding-bottom: 40px;
+max-width: 1120px;
+margin: 0 auto;
+padding: 28px 16px 56px;
 }

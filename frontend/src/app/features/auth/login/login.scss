@@ -1,45 +1,80 @@
+:host {
+  display: block;
+}
+
 .auth-wrap {
-min-height: 100vh;
-display: grid;
-place-items: center;
-padding: 24px;
+  // Fill the viewport without exceeding it.
+  // 100dvh accounts for mobile browser toolbars; 100vh is the fallback.
+  min-height: 100vh;
+  min-height: 100dvh;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  box-sizing: border-box;
+  overflow: hidden;
 }
+
 .auth-card {
-width: 100%;
-max-width: 420px;
-padding: 32px;
+  width: 100%;
+  max-width: 480px;
+  padding: 40px 38px;
+  // If the window is very short, the card scrolls instead of the page
+  max-height: calc(100dvh - 48px);
+  overflow-y: auto;
 }
+
 .brand-mark {
-display: grid;
-place-items: center;
-width: 46px;
-height: 46px;
-border-radius: 13px;
-background: linear-gradient(135deg, var(--app-accent), var(--app-accent-2));
-color: #fff;
-font-size: 1.25rem;
+  display: grid;
+  place-items: center;
+  width: 58px;
+  height: 58px;
+  border-radius: 16px;
+  background: linear-gradient(135deg, var(--app-accent), var(--app-accent-2));
+  color: #fff;
+  font-size: 1.6rem;
 }
+
 .auth-title {
-font-size: 1.5rem;
-font-weight: 800;
-margin: 0 0 4px;
+  font-size: 1.8rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  margin: 0 0 6px;
 }
+
 .auth-sub {
-margin: 0;
-color: var(--app-text-muted);
-font-size: 0.9rem;
+  margin: 0;
+  color: var(--app-text-muted);
+  font-size: 1rem;
 }
+
+.auth-card .form-control {
+  padding: 13px 16px;
+  font-size: 1rem;
+}
+
+.auth-card .app-label {
+  font-size: 0.9rem;
+  margin-bottom: 7px;
+}
+
+.auth-card .btn-gradient {
+  padding: 13px 26px;
+  font-size: 1.02rem;
+}
+
 .auth-foot {
-margin: 20px 0 0;
-text-align: center;
-font-size: 0.88rem;
-color: var(--app-text-muted);
-a {
-color: var(--app-accent);
-font-weight: 600;
-text-decoration: none;
-&:hover {
-text-decoration: underline;
-}
-}
+  margin: 22px 0 0;
+  text-align: center;
+  font-size: 0.95rem;
+  color: var(--app-text-muted);
+
+  a {
+    color: var(--app-accent);
+    font-weight: 600;
+    text-decoration: none;
+
+    &:hover {
+      text-decoration: underline;
+    }
+  }
 }
