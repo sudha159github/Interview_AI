@@ -17,24 +17,20 @@ var builder = WebApplication.CreateBuilder(args);
 // ---------- Database ----------
 
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection")
-    ?? throw new InvalidOperationException(
-        "Connection string 'DefaultConnection' is not configured.");
+    ?? throw new InvalidOperationException("Connection string 'DefaultConnection' is not configured.");
 
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseSqlServer(connectionString));
 
-// ---------- JWT settings ----------
+// ---------- JWT settings (validated when the app starts) ----------
 
 builder.Services.AddOptions<JwtOptions>()
     .Bind(builder.Configuration.GetSection(JwtOptions.SectionName))
     .ValidateDataAnnotations()
     .ValidateOnStart();
 
-var jwt = builder.Configuration
-    .GetSection(JwtOptions.SectionName)
-    .Get<JwtOptions>()
-    ?? throw new InvalidOperationException(
-        "The 'Jwt' configuration section is missing.");
+var jwt = builder.Configuration.GetSection(JwtOptions.SectionName).Get<JwtOptions>()
+    ?? throw new InvalidOperationException("The 'Jwt' configuration section is missing.");
 
 if (string.IsNullOrWhiteSpace(jwt.SigningKey))
 {
@@ -42,7 +38,7 @@ if (string.IsNullOrWhiteSpace(jwt.SigningKey))
         "Jwt:SigningKey is not configured. Set it with 'dotnet user-secrets set'.");
 }
 
-// ---------- Identity ----------
+// ---------- Identity (users, password hashing, lockout) ----------
 
 builder.Services.AddIdentityCore<ApplicationUser>(options =>
 {
@@ -58,16 +54,16 @@ builder.Services.AddIdentityCore<ApplicationUser>(options =>
     options.Lockout.DefaultLockoutTimeSpan = TimeSpan.FromMinutes(15);
     options.Lockout.AllowedForNewUsers = true;
 })
-.AddEntityFrameworkStores<AppDbContext>()
-.AddSignInManager();
+    .AddEntityFrameworkStores<AppDbContext>()
+    .AddSignInManager();
 
-// ---------- Authentication + Authorization ----------
+// ---------- Authentication (who are you?) + Authorization (what may you do?) ----------
 
 builder.Services
     .AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
     {
-        // Keep claim names exactly as they appear in the token.
+        // Keep claim names exactly as in the token ("sub", "email", "sst")
         options.MapInboundClaims = false;
 
         options.TokenValidationParameters = new TokenValidationParameters
@@ -79,9 +75,7 @@ builder.Services
             ValidAudience = jwt.Audience,
 
             ValidateIssuerSigningKey = true,
-            IssuerSigningKey =
-                new SymmetricSecurityKey(
-                    Encoding.UTF8.GetBytes(jwt.SigningKey)),
+            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwt.SigningKey)),
 
             ValidateLifetime = true,
             ClockSkew = TimeSpan.FromSeconds(30)
@@ -92,138 +86,121 @@ builder.Services.AddAuthorization();
 
 // ---------- AI provider: Groq or Gemini ----------
 
-var aiProvider = builder.Configuration["Ai:Provider"];
-
-if (string.IsNullOrWhiteSpace(aiProvider))
-{
-    throw new InvalidOperationException(
-        "Ai:Provider is not configured. Set it to 'Groq' or 'Gemini'.");
-}
+var aiProvider = builder.Configuration["Ai:Provider"] ?? "Groq";
 
 switch (aiProvider.ToLowerInvariant())
 {
-    case "groq":
-
-        builder.Services.AddOptions<GroqOptions>()
-            .Bind(builder.Configuration.GetSection(GroqOptions.SectionName))
-            .ValidateDataAnnotations()
-            .ValidateOnStart();
-
-        builder.Services
-            .AddHttpClient<IInterviewReportGenerator, GroqInterviewReportGenerator>(
-                (serviceProvider, client) =>
-                {
-                    var groq = serviceProvider
-                        .GetRequiredService<IOptions<GroqOptions>>()
-                        .Value;
-
-                    client.BaseAddress = new Uri(groq.BaseUrl);
-
-                    client.DefaultRequestHeaders.Authorization =
-                        new System.Net.Http.Headers.AuthenticationHeaderValue(
-                            "Bearer",
-                            groq.ApiKey);
-
-                    // Resilience handler controls the actual timeout.
-                    client.Timeout = Timeout.InfiniteTimeSpan;
-                })
-            .AddStandardResilienceHandler(ConfigureAiResilience);
-
-        break;
-
     case "gemini":
-
         builder.Services.AddOptions<GeminiOptions>()
             .Bind(builder.Configuration.GetSection(GeminiOptions.SectionName))
             .ValidateDataAnnotations()
             .ValidateOnStart();
 
         builder.Services
-            .AddHttpClient<IInterviewReportGenerator, GeminiInterviewReportGenerator>(
-                (serviceProvider, client) =>
-                {
-                    var gemini = serviceProvider
-                        .GetRequiredService<IOptions<GeminiOptions>>()
-                        .Value;
+            .AddHttpClient<IInterviewReportGenerator, GeminiInterviewReportGenerator>((serviceProvider, client) =>
+            {
+                var gemini = serviceProvider.GetRequiredService<IOptions<GeminiOptions>>().Value;
 
-                    client.BaseAddress = new Uri(gemini.BaseUrl);
+                client.BaseAddress = new Uri(gemini.BaseUrl);
 
-                    // API key is sent in a header, not in the URL.
-                    client.DefaultRequestHeaders.Add(
-                        "x-goog-api-key",
-                        gemini.ApiKey);
+                // API key in a header, never in the URL (URLs end up in logs)
+                client.DefaultRequestHeaders.Add("x-goog-api-key", gemini.ApiKey);
 
-                    client.Timeout = Timeout.InfiniteTimeSpan;
-                })
+                client.Timeout = Timeout.InfiniteTimeSpan;   // the resilience handler controls timeouts
+            })
+            .AddStandardResilienceHandler(ConfigureAiResilience);
+
+        // Answer feedback is implemented for Groq only
+        throw new InvalidOperationException(
+            "Answer feedback is implemented for Groq. Set \"Ai:Provider\" to \"Groq\".");
+
+    case "groq":
+        builder.Services.AddOptions<GroqOptions>()
+            .Bind(builder.Configuration.GetSection(GroqOptions.SectionName))
+            .ValidateDataAnnotations()
+            .ValidateOnStart();
+
+        // 1. generates interview reports
+        builder.Services
+            .AddHttpClient<IInterviewReportGenerator, GroqInterviewReportGenerator>((serviceProvider, client) =>
+            {
+                var groq = serviceProvider.GetRequiredService<IOptions<GroqOptions>>().Value;
+
+                client.BaseAddress = new Uri(groq.BaseUrl);
+                client.DefaultRequestHeaders.Authorization =
+                    new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", groq.ApiKey);
+
+                client.Timeout = Timeout.InfiniteTimeSpan;
+            })
+            .AddStandardResilienceHandler(ConfigureAiResilience);
+
+        // 2. scores practice answers
+        builder.Services
+            .AddHttpClient<IAnswerFeedbackGenerator, GroqAnswerFeedbackGenerator>((serviceProvider, client) =>
+            {
+                var groq = serviceProvider.GetRequiredService<IOptions<GroqOptions>>().Value;
+
+                client.BaseAddress = new Uri(groq.BaseUrl);
+                client.DefaultRequestHeaders.Authorization =
+                    new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", groq.ApiKey);
+
+                client.Timeout = Timeout.InfiniteTimeSpan;
+            })
             .AddStandardResilienceHandler(ConfigureAiResilience);
 
         break;
 
     default:
-
         throw new InvalidOperationException(
-            $"Unknown AI provider '{aiProvider}'. " +
-            "Use 'Groq' or 'Gemini'.");
+            $"Unknown AI provider '{aiProvider}'. Set \"Ai:Provider\" to \"Groq\" or \"Gemini\".");
 }
 
 // ---------- Application services ----------
 
 builder.Services.AddHttpContextAccessor();
-
 builder.Services.AddScoped<ICurrentUser, HttpContextCurrentUser>();
 builder.Services.AddScoped<TokenService>();
 builder.Services.AddScoped<AuthService>();
 builder.Services.AddScoped<IResumeTextExtractor, ResumeTextExtractor>();
 builder.Services.AddScoped<InterviewReportService>();
+builder.Services.AddScoped<MockInterviewService>();
 
 builder.Services.AddControllers();
 
-// ---------- OpenAPI ----------
-
+// Generate the OpenAPI description of our endpoints
 builder.Services.AddOpenApi();
 
 // ---------- Request pipeline ----------
 
 var app = builder.Build();
 
-// Swagger/OpenAPI only in Development.
+// Swagger only in Development: never expose API documentation in production
 if (app.Environment.IsDevelopment())
 {
     app.MapOpenApi();
-
     app.UseSwaggerUI(options =>
-        options.SwaggerEndpoint(
-            "/openapi/v1.json",
-            "Interview AI API v1"));
+        options.SwaggerEndpoint("/openapi/v1.json", "Interview AI API v1"));
 }
 
 app.UseHttpsRedirection();
 
-app.UseAuthentication();
-app.UseAuthorization();
+app.UseAuthentication();   // 1. read and verify the token → who is this?
+app.UseAuthorization();    // 2. check [Authorize] → are they allowed?
 
 app.MapControllers();
 
 app.Run();
 
-// ---------- AI resilience ----------
-
-static void ConfigureAiResilience(
-    Microsoft.Extensions.Http.Resilience.HttpStandardResilienceOptions resilience)
+// AI calls are slow and occasionally fail: the same policy for every provider.
+// Retries wait a few seconds because free tiers limit requests per second.
+static void ConfigureAiResilience(Microsoft.Extensions.Http.Resilience.HttpStandardResilienceOptions resilience)
 {
-    // Maximum time for one AI attempt.
-    resilience.AttemptTimeout.Timeout =
-        TimeSpan.FromSeconds(60);
+    resilience.AttemptTimeout.Timeout = TimeSpan.FromSeconds(60);
+    resilience.TotalRequestTimeout.Timeout = TimeSpan.FromSeconds(150);
 
-    // Maximum time for the complete request including retry.
-    resilience.TotalRequestTimeout.Timeout =
-        TimeSpan.FromSeconds(150);
+    // Must be at least twice the attempt timeout
+    resilience.CircuitBreaker.SamplingDuration = TimeSpan.FromSeconds(150);
 
-    // Circuit breaker sampling period.
-    resilience.CircuitBreaker.SamplingDuration =
-        TimeSpan.FromSeconds(150);
-
-    // One retry after a short delay.
     resilience.Retry.MaxRetryAttempts = 1;
     resilience.Retry.Delay = TimeSpan.FromSeconds(3);
     resilience.Retry.UseJitter = true;

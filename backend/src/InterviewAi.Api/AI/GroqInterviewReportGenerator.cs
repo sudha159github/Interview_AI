@@ -16,7 +16,7 @@ internal sealed record GroqRequest(
     string Model,
     IReadOnlyList<GroqMessage> Messages,
     GroqResponseFormat ResponseFormat,
-    double Temperature = 0.3);
+    double Temperature = 1);
 
 internal sealed record GroqMessage(
     string Role,
@@ -64,7 +64,7 @@ public class GroqInterviewReportGenerator(
         CancellationToken cancellationToken)
     {
         // 1. Build the request. JSON mode requires the word "JSON" in the prompt,
-        //    so we append an explicit shape description to the system rules.
+        //    so the shape description is appended to the system rules.
         var request = new GroqRequest(
             Model: _options.Model,
             Messages:
@@ -93,7 +93,9 @@ public class GroqInterviewReportGenerator(
                     "Groq returned HTTP {StatusCode} for model {Model}: {Detail}",
                     (int)response.StatusCode, _options.Model, detail);
 
-                throw new AiGenerationException($"The AI service returned HTTP {(int)response.StatusCode}.");
+                // TEMPORARY: the provider's message travels with the exception so it can be read
+                throw new AiGenerationException(
+                    $"Groq returned HTTP {(int)response.StatusCode}: {detail}");
             }
 
             body = await response.Content.ReadFromJsonAsync<GroqResponse>(ApiJsonOptions, cancellationToken);
